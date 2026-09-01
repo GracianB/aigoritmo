@@ -1,0 +1,1 @@
+"""External adapters (LLM, TTS)."""

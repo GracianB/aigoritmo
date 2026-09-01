@@ -1,0 +1,11 @@
+{
+  "id": "arcana",
+  "name": "ARCANA",
+  "demo_video": "/media/videos/visionfuture.mp4",
+  "states": [
+    "idle",
+    "thinking",
+    "speaking",
+    "error"
+  ]
+}

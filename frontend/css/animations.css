@@ -1,0 +1,6 @@
+
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes spin-reverse { to { transform:rotate(-360deg); } }
+@keyframes thinkingPulse { 50% { transform:scale(1.035); filter:brightness(1.15); } }
+@keyframes talkingPulse { from { transform:scale(1); } to { transform:scale(1.025); filter:brightness(1.08); } }
+@keyframes typing { 0%,100%{transform:translateY(0);opacity:.35}50%{transform:translateY(-4px);opacity:1} }

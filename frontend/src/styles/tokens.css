@@ -1,0 +1,34 @@
+:root {
+  --bg: #08070b;
+  --panel: rgba(14, 13, 18, 0.78);
+  --text: #f3efe6;
+  --muted: #9a9488;
+  --gold: #e4c891;
+  --gold-2: #c9a46a;
+  --violet: #8b6ad6;
+  --think: #c084fc;
+  --write: #5dffc8;
+  --speak: #f0c56b;
+  --idle: #3ec8ff;
+  --danger: #ff8b9a;
+  --line: rgba(255, 255, 255, 0.08);
+  --font: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+
+* { box-sizing: border-box; }
+html, body, #app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+}
+button, textarea, input { font: inherit; }
+button { border-radius: var(--radius-sm); }
+::selection { background: rgba(228, 200, 145, .28); color: #fff; }
