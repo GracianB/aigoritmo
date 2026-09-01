@@ -20,6 +20,8 @@ data/*.db
 data/*.db-journal
 *.onnx
 wav_cache/
+scripts/cloudflared.exe
+frontend/dist/
 .DS_Store
 Thumbs.db
 

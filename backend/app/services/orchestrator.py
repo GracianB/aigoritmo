@@ -77,7 +77,7 @@ class Orchestrator:
             self._conversations.append(conv.id, ChatMessage(role="system", content=briefing))
             conv = self._conversations.get(conv.id)
             png = await generate_scene(spread)
-            caption = "Tirada de tres caminos"
+            caption = "La carta"
             if png:
                 caption = "Visión de la tirada"
                 image_id = self._images.save_png(png)

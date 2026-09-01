@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.audio import router as audio_router
@@ -11,7 +12,7 @@ from app.api.chat import router as chat_router
 from app.api.conversations import router as conversations_router
 from app.api.health import router as health_router
 from app.api.vision import router as vision_router
-from app.core.config import get_settings
+from app.core.config import PROJECT_DIR, get_settings
 from app.domain.avatars import AvatarCatalog
 from app.services.audio_clips import AudioClipStore
 from app.services.conversations import ConversationStore
@@ -30,6 +31,7 @@ LOCAL_ORIGINS = (
     "http://127.0.0.1:8000",
     "http://localhost:8000",
 )
+TUNNEL_ORIGIN = r"https://.*\.(trycloudflare\.com|loca\.lt|ngrok-free\.app|ngrok\.io)"
 
 
 @asynccontextmanager
@@ -90,6 +92,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(LOCAL_ORIGINS),
+        allow_origin_regex=TUNNEL_ORIGIN,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -102,6 +105,13 @@ def create_app() -> FastAPI:
     app.include_router(vision_router)
     if settings.media_dir.is_dir():
         app.mount("/media", StaticFiles(directory=settings.media_dir), name="media")
+    dist = PROJECT_DIR / "frontend" / "dist"
+    if (dist / "index.html").is_file():
+        app.mount("/", StaticFiles(directory=dist, html=True), name="studio")
+    else:
+        @app.get("/")
+        def studio_entry() -> RedirectResponse:
+            return RedirectResponse("http://127.0.0.1:5173", status_code=307)
     return app
 
 

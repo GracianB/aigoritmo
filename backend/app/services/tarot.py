@@ -33,8 +33,6 @@ MAJOR_ARCANA: list[tuple[str, str, str]] = [
     ("XXI", "El Mundo", "cierre pleno, integración"),
 ]
 
-POSITIONS = ("Pasado", "Presente", "Futuro")
-
 PALETTES = {
     "arcana": {
         "bg": (8, 18, 14),
@@ -66,32 +64,27 @@ class DrawnCard:
 @dataclass(frozen=True)
 class Spread:
     question: str
-    cards: tuple[DrawnCard, DrawnCard, DrawnCard]
+    cards: tuple[DrawnCard, ...]
     avatar_id: str
 
     def briefing(self) -> str:
-        lines = [
-            f"Pregunta del consultante: {self.question}",
-            "Tirada de tres arcanos mayores (úsalas SOLO estas, no inventes otras):",
-        ]
-        for card in self.cards:
-            lines.append(f"- {card.position}: {card.roman} {card.name} ({card.keywords})")
-        lines.append(
-            "Interpreta cada carta en relación directa con la pregunta. "
-            "Luego una síntesis clara. Español, concreto, sin relleno."
+        card = self.cards[0]
+        return "\n".join(
+            [
+                f"Pregunta del consultante: {self.question}",
+                "Tirada de UN solo arcano mayor. Interpreta SOLO esta carta. Nunca hables de tres cartas ni de pasado/presente/futuro:",
+                f"- {card.roman} {card.name} ({card.keywords})",
+                "Relaciónala con la pregunta. Español, concreto, sin relleno.",
+            ]
         )
-        return "\n".join(lines)
 
 
 def draw_spread(question: str, avatar_id: str) -> Spread:
     seed = hashlib.sha256(f"{avatar_id}|{question.strip().lower()}".encode("utf-8")).hexdigest()
     rng = random.Random(seed)
-    picks = rng.sample(MAJOR_ARCANA, 3)
-    cards = tuple(
-        DrawnCard(roman=p[0], name=p[1], keywords=p[2], position=POSITIONS[i])
-        for i, p in enumerate(picks)
-    )
-    return Spread(question=question.strip(), cards=cards, avatar_id=avatar_id)
+    roman, name, keywords = rng.choice(MAJOR_ARCANA)
+    card = DrawnCard(roman=roman, name=name, keywords=keywords, position="Carta")
+    return Spread(question=question.strip(), cards=(card,), avatar_id=avatar_id)
 
 
 def _font(size: int, bold: bool = False) -> ImageFont.ImageFont:
@@ -114,39 +107,34 @@ def _font(size: int, bold: bool = False) -> ImageFont.ImageFont:
 
 def render_spread(spread: Spread) -> bytes:
     palette = PALETTES.get(spread.avatar_id, PALETTES["arcana"])
-    width, height = 1200, 780
+    width, height = 768, 1280
     image = Image.new("RGB", (width, height), palette["bg"])
     draw = ImageDraw.Draw(image)
     title_font = _font(28, bold=True)
-    card_title = _font(26, bold=True)
-    roman_font = _font(42, bold=True)
-    body_font = _font(18)
-    small_font = _font(16)
+    card_title = _font(36, bold=True)
+    roman_font = _font(72, bold=True)
+    body_font = _font(22)
+    small_font = _font(18)
+    card = spread.cards[0]
 
     header = "ARCANA" if spread.avatar_id == "arcana" else "ARCANO"
-    draw.text((48, 28), header, font=title_font, fill=palette["gold"])
-    draw.text((48, 68), "Tirada de tres caminos", font=small_font, fill=palette["mute"])
+    outer = (28, 28, width - 28, height - 28)
+    draw.rounded_rectangle(outer, radius=36, fill=palette["card"], outline=palette["gold"], width=7)
+    inner = (52, 52, width - 52, height - 52)
+    draw.rounded_rectangle(inner, radius=24, outline=palette["edge"], width=2)
+    filigree = (72, 72, width - 72, height - 72)
+    draw.rounded_rectangle(filigree, radius=18, outline=palette["gold"], width=1)
 
-    card_w, card_h = 320, 480
-    gap = 40
-    start_x = (width - (card_w * 3 + gap * 2)) // 2
-    top = 120
-    for i, card in enumerate(spread.cards):
-        x = start_x + i * (card_w + gap)
-        box = (x, top, x + card_w, top + card_h)
-        draw.rounded_rectangle(box, radius=18, fill=palette["card"], outline=palette["edge"], width=3)
-        inner = (x + 14, top + 14, x + card_w - 14, top + card_h - 14)
-        draw.rounded_rectangle(inner, radius=12, outline=palette["gold"], width=1)
-        draw.text((x + 24, top + 28), card.position.upper(), font=small_font, fill=palette["gold"])
-        draw.text((x + 24, top + 120), card.roman, font=roman_font, fill=palette["gold"])
-        draw.text((x + 24, top + 190), card.name, font=card_title, fill=palette["text"])
-        draw.text((x + 24, top + 250), card.keywords, font=body_font, fill=palette["mute"])
+    draw.text((96, 110), header, font=title_font, fill=palette["gold"])
+    draw.text((96, 160), "Una carta", font=small_font, fill=palette["mute"])
+    draw.text((96, 360), card.roman, font=roman_font, fill=palette["gold"])
+    draw.text((96, 470), card.name, font=card_title, fill=palette["text"])
+    draw.text((96, 540), card.keywords, font=body_font, fill=palette["mute"])
 
     q = spread.question
-    if len(q) > 110:
-        q = q[:107] + "…"
-    draw.rectangle((0, height - 90, width, height), fill=(0, 0, 0))
-    draw.text((48, height - 58), f"Pregunta: {q}", font=body_font, fill=palette["text"])
+    if len(q) > 70:
+        q = q[:67] + "…"
+    draw.text((96, height - 160), q, font=body_font, fill=palette["text"])
 
     buffer = BytesIO()
     image.save(buffer, format="PNG")

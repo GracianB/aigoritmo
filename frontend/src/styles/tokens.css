@@ -1,21 +1,24 @@
 :root {
   --bg: #08070b;
-  --panel: rgba(14, 13, 18, 0.78);
+  --panel: rgba(14, 13, 18, 0.86);
   --text: #f3efe6;
-  --muted: #9a9488;
+  --muted: #b7b0a3;
   --gold: #e4c891;
-  --gold-2: #c9a46a;
+  --gold-2: #d4b57a;
   --violet: #8b6ad6;
   --think: #c084fc;
   --write: #5dffc8;
   --speak: #f0c56b;
   --idle: #3ec8ff;
   --danger: #ff8b9a;
-  --line: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.12);
   --font: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --radius: 18px;
   --radius-sm: 12px;
+  --focus: 0 0 0 2px #08070b, 0 0 0 4px var(--gold);
+  --console-compact-w: min(360px, 30vw);
+  --console-expanded-w: min(560px, 46vw);
 }
 
 * { box-sizing: border-box; }
@@ -30,5 +33,7 @@ html, body, #app {
   font-family: var(--font);
 }
 button, textarea, input { font: inherit; }
-button { border-radius: var(--radius-sm); }
+button { border-radius: var(--radius-sm); cursor: pointer; touch-action: manipulation; }
+:focus { outline: none; }
+:focus-visible { box-shadow: var(--focus); }
 ::selection { background: rgba(228, 200, 145, .28); color: #fff; }

@@ -1,3 +1,4 @@
+from app.adapters.images.pollinations import scene_prompt
 from app.services.tarot import draw_spread, render_spread
 
 
@@ -7,12 +8,23 @@ def test_same_question_same_cards():
     assert [c.name for c in first.cards] == [c.name for c in second.cards]
 
 
-def test_briefing_contains_question_and_three_cards():
+def test_briefing_contains_question_and_one_card():
     spread = draw_spread("¿me mudo de ciudad?", "arcano")
     text = spread.briefing()
     assert "¿me mudo de ciudad?" in text
-    assert "Pasado" in text and "Presente" in text and "Futuro" in text
-    assert text.count("- ") == 3
+    assert len(spread.cards) == 1
+    assert text.count("- ") == 1
+    assert "Pasado:" not in text and "Presente:" not in text and "Futuro:" not in text
+    assert "UN solo arcano" in text
+
+
+def test_scene_prompt_is_one_tarot_card():
+    spread = draw_spread("amor", "arcana")
+    prompt = scene_prompt(spread)
+    assert "tarot-card shape" in prompt
+    assert "one card only" in prompt
+    assert "three" not in prompt
+    assert spread.cards[0].name in prompt
 
 
 def test_render_png_header():

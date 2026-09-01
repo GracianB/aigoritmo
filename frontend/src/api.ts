@@ -15,19 +15,30 @@ export async function streamChat(
   signal?: AbortSignal,
   drawCards = false,
 ): Promise<void> {
-  const response = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message,
-      avatar_id: avatarId,
-      conversation_id: conversationId,
-      draw_cards: drawCards,
-    }),
-    signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        avatar_id: avatarId,
+        conversation_id: conversationId,
+        draw_cards: drawCards,
+      }),
+      signal,
+    });
+  } catch {
+    handlers.onError?.("backend_unavailable", "El estudio no responde. ¿Sigue FastAPI en 127.0.0.1:8000?");
+    return;
+  }
   if (!response.ok || !response.body) {
-    handlers.onError?.("http_error", `El servidor respondió ${response.status}.`);
+    const code = response.status === 0 || response.status >= 500 ? "backend_unavailable" : "http_error";
+    const message =
+      response.status >= 500
+        ? "El estudio no responde. ¿Sigue FastAPI en 127.0.0.1:8000?"
+        : `El servidor respondió ${response.status}.`;
+    handlers.onError?.(code, message);
     return;
   }
 
@@ -97,6 +108,20 @@ export async function fetchAvatars(): Promise<Avatar[]> {
   return body.avatars;
 }
 
+export type StudioHealth = {
+  status: string;
+  ollama: boolean;
+  ollama_chat_ready: boolean;
+  piper_executable: boolean;
+  chat_model: string;
+};
+
+export async function fetchHealth(): Promise<StudioHealth> {
+  const response = await fetch("/health");
+  if (!response.ok) throw new Error("No se pudo leer el estado del estudio");
+  return (await response.json()) as StudioHealth;
+}
+
 export async function speak(avatarId: string, text: string): Promise<string | null> {
   const response = await fetch("/api/speak", {
     method: "POST",
@@ -123,6 +148,11 @@ export async function analyzeImage(
   form.append("prompt", prompt);
   const response = await fetch("/api/vision/analyze", { method: "POST", body: form });
   const body = (await response.json()) as VisionResult & { code?: string; message?: string };
-  if (!response.ok) throw new Error(body.message || `Error visual ${response.status}`);
+  if (!response.ok) {
+    if (body.code === "ollama_vision_unavailable" || body.code === "ollama_unavailable") {
+      throw new Error("La visión local no está lista. Ollama no responde o falta llama3.2-vision.");
+    }
+    throw new Error(body.message || "No se pudo interpretar la imagen.");
+  }
   return body;
 }

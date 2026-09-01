@@ -7,11 +7,13 @@ from app.services.tarot import Spread
 
 
 def scene_prompt(spread: Spread) -> str:
-    cards = ", ".join(f"{c.position}: {c.name}" for c in spread.cards)
+    card = spread.cards[0]
     return (
-        "cinematic tarot reading table, three major arcana cards laid out, "
-        f"{cards}, mystical gold candlelight, dark forest temple, "
-        "photorealistic, no letters, no watermark, vertical altar composition"
+        "a single tarot card in classic tarot-card shape, vertical rectangular naipe "
+        "with ornate gold filigree border and rounded corners, "
+        f"major arcana {card.name} as the painted scene inside the card, "
+        "vintage tarot playing card, one card only, no table, no extra cards, "
+        "mystical candlelight, dark background, no letters, no watermark"
     )
 
 
@@ -19,7 +21,7 @@ async def generate_scene(spread: Spread) -> bytes | None:
     prompt = quote(scene_prompt(spread)[:380])
     url = (
         f"https://image.pollinations.ai/prompt/{prompt}"
-        "?width=1024&height=768&nologo=true&model=flux"
+        "?width=768&height=1280&nologo=true&model=flux"
     )
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(50.0, connect=8.0), follow_redirects=True) as client:

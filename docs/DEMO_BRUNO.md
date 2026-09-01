@@ -14,7 +14,7 @@ Ask ARCANA:
 Point out that the persona is not hard-coded into the frontend. It lives in a persona layer.
 
 ### 2. Specialization
-Run a three-card spread.
+Run a one-card spread.
 
 Explain that the application generates structured context and stores the spread in the active conversation.
 

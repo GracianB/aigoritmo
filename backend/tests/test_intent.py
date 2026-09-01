@@ -12,6 +12,6 @@ def test_explicit_flag_always_draws():
 
 
 def test_asks_for_reading():
-    assert wants_spread("Sí, lanza una tirada de tres cartas") is True
+    assert wants_spread("Sí, lanza una tirada de una carta") is True
     assert wants_spread("hazme una lectura") is True
     assert wants_spread("tira las cartas") is True
