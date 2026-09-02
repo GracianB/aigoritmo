@@ -131,25 +131,25 @@ function renderStudio(root: HTMLElement): void {
           ${media}
           <div class="presence__cluster">
             ${orbMarkup()}
-            <p class="presence__caption" id="presence-caption">en espera</p>
+            <p class="presence__caption" id="presence-caption">en calma</p>
           </div>
         </div>
       </div>
 
       <header class="arcana__header">
-        <div class="brand"><span class="brand__sigil" aria-hidden="true">✦</span><span>Aigoritmo / ${escapeHtml(avatar.name)}</span></div>
+        <div class="brand"><span class="brand__sigil" aria-hidden="true">✦</span><span class="brand__house">Aigoritmo</span><span class="brand__name">${escapeHtml(avatar.name)}</span></div>
         <div class="status">
           <div class="avatar-switch" id="avatar-switch" role="tablist" aria-label="Elegir presencia">
             ${state.roster.map((item) => `<button type="button" role="tab" data-avatar="${item.id}" aria-selected="${item.id === avatar.id}" class="${item.id === avatar.id ? "is-active" : ""}">${escapeHtml(item.name)}</button>`).join("")}
           </div>
-          <span class="status__dot" aria-hidden="true"></span><span id="voice-status">en espera</span>
+          <span class="status__dot" aria-hidden="true"></span><span id="voice-status">en calma</span>
         </div>
       </header>
 
       <section class="console" aria-label="Consulta">
         <div class="console__head">
           <div>
-            <strong>Consulta</strong>
+            <strong>La mesa</strong>
             <span id="feature">${escapeHtml(avatar.feature)}</span>
           </div>
           <div class="console__head-actions">
@@ -162,8 +162,8 @@ function renderStudio(root: HTMLElement): void {
         <div class="studio-alert" id="studio-alert" hidden role="status"></div>
 
         <div class="quick-actions${vision ? "" : " is-solo"}">
-          <button class="ritual-btn" id="draw" type="button"><span aria-hidden="true">✦</span><b>Tirar una carta</b><small>un solo arcano mayor</small></button>
-          ${vision ? `<button class="ritual-btn" id="vision" type="button"><span aria-hidden="true">◈</span><b>Opcional: tu foto</b><small>solo si quieres que mire algo tuyo</small></button>` : ""}
+          <button class="ritual-btn ritual-btn--hero" id="draw" type="button"><span aria-hidden="true">✦</span><b>Tirar una carta</b><small>un solo arcano mayor</small></button>
+          ${vision ? `<button class="ritual-btn ritual-btn--quiet" id="vision" type="button"><span aria-hidden="true">◈</span><b>Opcional: tu foto</b><small>si quieres que mire algo tuyo</small></button>` : ""}
           <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
         </div>
 
@@ -181,7 +181,7 @@ function renderStudio(root: HTMLElement): void {
 
         <form class="composer" id="composer">
           <label class="sr-only" for="input">Escribe tu consulta</label>
-          <textarea id="input" rows="1" maxlength="8000" placeholder="Dile qué te inquieta. Un saludo no lanza cartas; pídele una tirada cuando quieras." autocomplete="off"></textarea>
+          <textarea id="input" rows="1" maxlength="8000" placeholder="Dile qué te inquieta. Un saludo no tira cartas." autocomplete="off"></textarea>
           <button class="mic" id="mic" type="button" title="Hablar" aria-label="Dictar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/></svg>
           </button>
@@ -438,7 +438,7 @@ function bindMic(root: HTMLElement): void {
 }
 
 function renderSuggestions(root: HTMLElement, chips: PromptChip[]): void {
-  const wrap = root.querySelector("#suggestions");
+  const wrap = root.querySelector("#suggestions") as HTMLElement | null;
   if (!wrap) return;
   const usable = chips.filter((chip) => chip.text.trim());
   wrap.hidden = usable.length === 0;
@@ -492,7 +492,7 @@ function clearImage(root: HTMLElement): void {
   const preview = root.querySelector("#image-preview") as HTMLElement | null;
   if (preview) preview.hidden = true;
   const text = root.querySelector("#input") as HTMLTextAreaElement | null;
-  if (text) text.placeholder = "Dile qué te inquieta. Un saludo no lanza cartas; pídele una tirada cuando quieras.";
+  if (text) text.placeholder = "Dile qué te inquieta. Un saludo no tira cartas.";
 }
 
 async function drawCards(root: HTMLElement): Promise<void> {
@@ -665,6 +665,8 @@ function addSpread(
   }
   const wrap = document.createElement("figure");
   wrap.className = "spread";
+  const stage = document.createElement("div");
+  stage.className = "spread__stage";
   const frame = document.createElement("div");
   frame.className = "spread__frame";
   const img = document.createElement("img");
@@ -672,9 +674,12 @@ function addSpread(
   img.alt = caption || "Carta de tarot";
   img.loading = "lazy";
   frame.append(img);
-  wrap.append(frame);
+  stage.append(frame);
+  wrap.append(stage);
   const fig = document.createElement("figcaption");
-  fig.innerHTML = `<strong>${escapeHtml(caption || "La carta")}</strong>`;
+  fig.className = "spread__plaque";
+  const roman = cards?.[0]?.position ? `<em class="spread__roman">${escapeHtml(cards[0].position)}</em>` : "";
+  fig.innerHTML = `${roman}<strong>${escapeHtml(caption || "La carta")}</strong>`;
   if (cards?.length) {
     const list = document.createElement("div");
     list.className = "spread__cards";
@@ -814,10 +819,10 @@ function setSpeaking(on: boolean): void {
 
 function setPresence(mode: PresenceState): void {
   const labels: Record<PresenceState, string> = {
-    idle: "escucha",
+    idle: "en calma",
     thinking: "en trance",
-    writing: "dictando",
-    speaking: "hablando",
+    writing: "escribe",
+    speaking: "habla",
   };
   document.querySelectorAll(".presence, .arcana").forEach((el) => {
     (el as HTMLElement).dataset.state = mode;
@@ -857,10 +862,10 @@ function gateHtml(): string {
     <video class="gate__video" autoplay muted loop playsinline poster="/media/image/arcana.jpg?v=land" src="/media/videos/portada.mp4" aria-hidden="true"></video>
     <div class="gate__veil"></div>
     <div class="gate__copy">
-      <div class="gate__orb">${orbMarkup()}</div>
-      <p class="gate__kicker">Consulta privada</p>
+      <p class="gate__kicker">Salón privado</p>
       <h1 id="gate-title">Arcana</h1>
-      <p class="gate__lede" id="gate-lede">Una sola carta. Una voz. Aquí, en tu máquina. Pregunta; ella tira.</p>
+      <div class="gate__rule" aria-hidden="true"></div>
+      <p class="gate__lede" id="gate-lede">Cierra la puerta. Una carta. Una voz. Nada de esto sale de la habitación.</p>
       <button class="enter" id="enter" type="button">Entrar</button>
       <small class="gate__note">Nada sale de tu máquina · 127.0.0.1</small>
     </div>
@@ -880,6 +885,7 @@ function errorGate(kind: string): string {
       <div class="gate__orb">${orbMarkup()}</div>
       <p class="gate__kicker">${copy.kicker}</p>
       <h1>Arcana</h1>
+      <div class="gate__rule" aria-hidden="true"></div>
       <p class="gate__lede">${copy.lede}</p>
       <button class="enter" id="retry" type="button">Reintentar</button>
       <small class="gate__note">Salud: 127.0.0.1:8000/health · Ollama: scripts/start-ollama.ps1</small>
