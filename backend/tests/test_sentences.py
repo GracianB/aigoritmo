@@ -23,3 +23,10 @@ def test_ellipsis_and_exclaim():
     ready, rest = split_ready_sentences("Cuidado… Sigue. ")
     assert "Cuidado…" in ready[0] or ready[0].startswith("Cuidado")
     assert rest == ""
+
+
+def test_splits_newline_thought():
+    ready, rest = split_ready_sentences("Primera idea" + chr(10) + "Segunda idea. ")
+    assert ready[0] == "Primera idea"
+    assert any("Segunda idea." in item for item in ready)
+    assert rest == ""

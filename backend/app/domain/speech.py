@@ -4,8 +4,9 @@ _MD_BOLD = re.compile(r"\*\*(.+?)\*\*")
 _MD_ITAL = re.compile(r"(?<!\*)\*(.+?)\*(?!\*)")
 _MD_CODE = re.compile(r"`([^`]+)`")
 _MD_HEAD = re.compile(r"^#{1,6}\s*", re.MULTILINE)
+_MD_LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
 _URL = re.compile(r"https?://\S+")
-_BULLET = re.compile(r"^\s*[-*•]\s+", re.MULTILINE)
+_BULLET = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+", re.MULTILINE)
 _EMOJI = re.compile(
     "["
     "\U0001f300-\U0001faff"
@@ -23,6 +24,7 @@ def prepare_for_speech(text: str) -> str:
         return ""
     out = text.replace("\r\n", "\n")
     out = _URL.sub(" ", out)
+    out = _MD_LINK.sub(r"\1", out)
     out = _MD_CODE.sub(r"\1", out)
     out = _MD_BOLD.sub(r"\1", out)
     out = _MD_ITAL.sub(r"\1", out)

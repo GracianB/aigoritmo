@@ -1,6 +1,6 @@
 import re
 
-_SENTENCE_END = re.compile(r"([.!?…]+)([\"»”']*)(\s+|$)")
+_SENTENCE_END = re.compile(r"([.!?…]+)([\"»”']*)(\s+|(?=[A-ZÁÉÍÓÚÑ¿¡])|$)")
 
 
 def split_ready_sentences(buffer: str) -> tuple[list[str], str]:
@@ -8,11 +8,15 @@ def split_ready_sentences(buffer: str) -> tuple[list[str], str]:
     ready: list[str] = []
     while buffer:
         match = _SENTENCE_END.search(buffer)
+        nl = buffer.find("\n")
+        if nl != -1 and (match is None or nl < match.start()):
+            piece = buffer[:nl].strip()
+            buffer = buffer[nl + 1 :]
+            if piece:
+                ready.append(piece)
+            continue
         if not match:
             break
-        if match.lastindex and match.group(3) == "" and match.end() == len(buffer):
-            # Trailing terminator with no following whitespace yet — still a sentence.
-            pass
         end = match.end()
         piece = buffer[:end].strip()
         buffer = buffer[end:]

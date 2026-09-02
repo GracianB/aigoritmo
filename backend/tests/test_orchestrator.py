@@ -95,3 +95,41 @@ async def test_hola_does_not_emit_spread(orchestrator, monkeypatch):
     async for chunk in orchestrator.chat("arcana", "hola", None):
         blob += chunk
     assert "event: image" not in blob
+
+@pytest.mark.asyncio
+async def test_tts_receives_cleaned_speech(orchestrator, monkeypatch):
+    heard: list[str] = []
+
+    class RecTts:
+        async def synthesize(self, text: str, voice_id: str, options=None) -> bytes:
+            heard.append(text)
+            return f"WAV:{text}".encode("utf-8")
+
+    monkeypatch.setattr("app.services.orchestrator.llm_provider_for", lambda n, s: FakeLlm(["**Hola.** Mira. "]))
+    monkeypatch.setattr("app.services.orchestrator.tts_provider_for", lambda n, s: RecTts())
+    blob = ""
+    async for chunk in orchestrator.chat("enigma", "quién eres", None):
+        blob += chunk
+    assert heard
+    assert all("**" not in item for item in heard)
+    assert any("Hola." in item for item in heard)
+
+
+@pytest.mark.asyncio
+async def test_lanza_tirada_emits_image_when_pollinations_hangs(orchestrator, monkeypatch):
+    import asyncio
+
+    async def hang(_spread):
+        await asyncio.sleep(30)
+        return None
+
+    monkeypatch.setattr("app.services.orchestrator.generate_scene", hang)
+    monkeypatch.setattr("app.services.orchestrator.llm_provider_for", lambda n, s: FakeLlm(["La carta habla. "]))
+    monkeypatch.setattr("app.services.orchestrator.tts_provider_for", lambda n, s: FakeTts())
+    blob = ""
+    async for chunk in orchestrator.chat("arcana", "lanza una tirada", None):
+        blob += chunk
+        if "event: image" in blob and "event: token" in blob:
+            break
+    assert "event: image" in blob
+    assert "/media/spreads/" in blob

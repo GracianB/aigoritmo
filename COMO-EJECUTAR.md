@@ -27,7 +27,7 @@ Navegador **en esta máquina**:
 - Estudio: http://127.0.0.1:5173
 - Salud del sistema: http://127.0.0.1:8000/health
 
-Pulsa **Entrar**. Si pide una tirada, di que sí o pulsa **Lanza la tirada**: ella genera **una carta** y la imagen.
+Pulsa **Entrar**. Un saludo no lanza cartas. Si pides una tirada —o pulsas **Tirar una carta**— genera **una sola carta** del Arcano Mayor y su imagen. Nunca un abanico de tres.
 
 Si Ollama y FastAPI ya están en marcha, basta con abrir `http://127.0.0.1:5173`. El túnel no entra en esta receta.
 

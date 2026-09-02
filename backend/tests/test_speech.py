@@ -18,3 +18,11 @@ def test_keeps_spanish_punctuation():
     spoken = prepare_for_speech("¿Qué debo soltar? ¡Mira el presente!")
     assert spoken.startswith("¿Qué")
     assert "¡Mira" in spoken
+
+def test_strips_numbered_list_and_link():
+    spoken = prepare_for_speech("1. **Mira** [esto](https://x.test) ahora.")
+    assert "1." not in spoken
+    assert "**" not in spoken
+    assert "http" not in spoken
+    assert "Mira" in spoken
+    assert "esto" in spoken

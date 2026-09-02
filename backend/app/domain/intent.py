@@ -6,7 +6,7 @@ _GREETING = re.compile(
     re.IGNORECASE,
 )
 _SPREAD = re.compile(
-    r"\b(tirada|tarot|cartas|lanza(?:me)?|tira(?:r|me)?(?:\s+las)?\s+cartas|otra tirada|haz(?:me)? una (?:tirada|lectura))\b",
+    r"\b(tirada|tarot|cartas|lectura|lanza(?:me)?|tira(?:r|me)?(?:\s+las)?\s+cartas|otra tirada|haz(?:me)? una (?:tirada|lectura)|una carta)\b",
     re.IGNORECASE,
 )
 _ACCEPT = re.compile(r"^(s[ií]|ok|vale|adelante|hazlo|dale|lanza|tira)[\s!?.]*$", re.IGNORECASE)
@@ -24,6 +24,7 @@ def wants_spread(text: str, *, explicit: bool = False) -> bool:
     raw = text.strip()
     if not raw or _GREETING.match(_fold(raw)):
         return False
-    if _ACCEPT.match(raw) or _ACCEPT.match(_fold(raw)):
+    folded = _fold(raw)
+    if _ACCEPT.match(raw) or _ACCEPT.match(folded):
         return True
-    return bool(_SPREAD.search(raw))
+    return bool(_SPREAD.search(raw) or _SPREAD.search(folded))

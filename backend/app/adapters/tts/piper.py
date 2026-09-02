@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 import hashlib
 import os
+import subprocess
 import sys
 import tempfile
-from contextlib import suppress
 from pathlib import Path
 
 from app.adapters.tts.base import TtsError
@@ -14,6 +16,7 @@ CREATE_NO_WINDOW = 0x08000000
 _CACHE_MAX = 64
 _SYNTH_TIMEOUT = 45.0
 _MEM_CACHE: dict[str, bytes] = {}
+_INFLIGHT: dict[str, asyncio.Task[bytes]] = {}
 _LOCK: asyncio.Lock | None = None
 
 
@@ -24,12 +27,33 @@ def _lock() -> asyncio.Lock:
     return _LOCK
 
 
+def _hide_window_kwargs() -> dict:
+    if sys.platform != "win32":
+        return {}
+    startup = subprocess.STARTUPINFO()
+    startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startup.wShowWindow = 0
+    return {
+        "creationflags": CREATE_NO_WINDOW,
+        "startupinfo": startup,
+    }
+
+
+def _is_wav(data: bytes) -> bool:
+    return len(data) > 44 and data[:4] == b"RIFF" and data[8:12] == b"WAVE"
+
+
 class PiperProvider:
-    def __init__(self, executable: Path, models_dir: Path, fallback_voice: str = "es-odal-medium") -> None:
-        self._executable = executable
-        self._models_dir = models_dir
+    def __init__(
+        self,
+        executable: Path,
+        models_dir: Path,
+        fallback_voice: str = "es-odal-medium",
+    ) -> None:
+        self._executable = Path(executable)
+        self._models_dir = Path(models_dir)
         self._fallback_voice = fallback_voice
-        self._root = executable.parent
+        self._root = self._executable.parent
         self._espeak = self._root / "espeak-ng-data"
         self._disk = self._root / "wav_cache"
         self._disk.mkdir(parents=True, exist_ok=True)
@@ -52,7 +76,7 @@ class PiperProvider:
     def _cache_key(self, text: str, model: Path, options: VoiceConfig | None) -> str:
         payload = "|".join(
             [
-                str(model),
+                str(model.resolve()),
                 text,
                 str(getattr(options, "length_scale", 1.08)),
                 str(getattr(options, "noise_scale", 0.667)),
@@ -63,7 +87,39 @@ class PiperProvider:
         )
         return hashlib.sha1(payload.encode("utf-8")).hexdigest()
 
-    async def synthesize(self, text: str, voice_id: str, options: VoiceConfig | None = None) -> bytes:
+    def _remember(self, key: str, wav: bytes) -> None:
+        if not wav:
+            return
+        if len(_MEM_CACHE) >= _CACHE_MAX and key not in _MEM_CACHE:
+            _MEM_CACHE.pop(next(iter(_MEM_CACHE)))
+        _MEM_CACHE[key] = wav
+        try:
+            (self._disk / f"{key}.wav").write_bytes(wav)
+        except OSError:
+            pass
+
+    def _from_disk(self, key: str) -> bytes | None:
+        path = self._disk / f"{key}.wav"
+        if not path.is_file():
+            return None
+        try:
+            wav = path.read_bytes()
+        except OSError:
+            return None
+        if not _is_wav(wav):
+            try:
+                path.unlink()
+            except OSError:
+                pass
+            return None
+        return wav
+
+    async def synthesize(
+        self,
+        text: str,
+        voice_id: str,
+        options: VoiceConfig | None = None,
+    ) -> bytes:
         spoken = prepare_for_speech(text)
         if not spoken:
             return b""
@@ -72,39 +128,46 @@ class PiperProvider:
                 "piper_unavailable",
                 f"No está piper.exe en {self._executable}",
             )
+
         model = self._model_path(voice_id, options.fallback_voice_id if options else None)
         key = self._cache_key(spoken, model, options)
+
         cached = _MEM_CACHE.get(key)
         if cached:
             return cached
-        disk = self._disk / f"{key}.wav"
-        if disk.is_file():
-            wav = disk.read_bytes()
-            _MEM_CACHE[key] = wav
-            return wav
+        disk = self._from_disk(key)
+        if disk:
+            _MEM_CACHE[key] = disk
+            return disk
 
         async with _lock():
             cached = _MEM_CACHE.get(key)
             if cached:
                 return cached
-            if disk.is_file():
-                wav = disk.read_bytes()
-                _MEM_CACHE[key] = wav
-                return wav
-            wav = await self._run(spoken, model, options)
-            if wav:
-                if len(_MEM_CACHE) >= _CACHE_MAX:
-                    _MEM_CACHE.pop(next(iter(_MEM_CACHE)))
-                _MEM_CACHE[key] = wav
-                try:
-                    disk.write_bytes(wav)
-                except OSError:
-                    pass
-            return wav
+            disk = self._from_disk(key)
+            if disk:
+                _MEM_CACHE[key] = disk
+                return disk
+            task = _INFLIGHT.get(key)
+            if task is None:
+                task = asyncio.create_task(self._run(spoken, model, options))
+                _INFLIGHT[key] = task
 
-    async def _run(self, text: str, model: Path, options: VoiceConfig | None) -> bytes:
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            out_path = Path(tmp.name)
+        try:
+            wav = await task
+        except Exception:
+            async with _lock():
+                if _INFLIGHT.get(key) is task:
+                    _INFLIGHT.pop(key, None)
+            raise
+
+        async with _lock():
+            if _INFLIGHT.get(key) is task:
+                _INFLIGHT.pop(key, None)
+            self._remember(key, wav)
+        return wav
+
+    def _build_cmd(self, model: Path, out_path: Path, options: VoiceConfig | None) -> list[str]:
         cmd = [
             str(self._executable),
             "--model",
@@ -127,35 +190,60 @@ class PiperProvider:
         if self._espeak.is_dir():
             cmd.extend(["--espeak_data", str(self._espeak)])
         speaker = getattr(options, "speaker", None)
-        if speaker is not None:
+        if speaker not in (None, ""):
             cmd.extend(["--speaker", str(speaker)])
-        kwargs: dict = {"cwd": str(self._root)}
-        if sys.platform == "win32":
-            kwargs["creationflags"] = CREATE_NO_WINDOW
+        return cmd
+
+    def _run_piper(self, cmd: list[str], text: str) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.run(
+            cmd,
+            input=text.encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=str(self._root),
+            timeout=_SYNTH_TIMEOUT,
+            check=False,
+            **_hide_window_kwargs(),
+        )
+
+    async def _run(self, text: str, model: Path, options: VoiceConfig | None) -> bytes:
+        fd, tmp_name = tempfile.mkstemp(suffix=".wav")
+        os.close(fd)
+        out_path = Path(tmp_name)
+        cmd = self._build_cmd(model, out_path, options)
         try:
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                **kwargs,
-            )
             try:
-                _stdout, stderr = await asyncio.wait_for(
-                    process.communicate(text.encode("utf-8")),
-                    timeout=_SYNTH_TIMEOUT,
+                proc = await asyncio.to_thread(self._run_piper, cmd, text)
+            except subprocess.TimeoutExpired:
+                raise TtsError(
+                    "piper_unavailable",
+                    "Piper tardó demasiado en sintetizar.",
+                ) from None
+            except FileNotFoundError:
+                raise TtsError(
+                    "piper_unavailable",
+                    f"No se pudo ejecutar Piper: {self._executable}",
+                ) from None
+            except OSError as exc:
+                raise TtsError("piper_unavailable", f"Piper no arrancó: {exc}") from exc
+
+            stderr = (proc.stderr or b"").decode("utf-8", errors="replace").strip()[:400]
+            if proc.returncode != 0:
+                raise TtsError("piper_unavailable", f"Piper falló ({proc.returncode}): {stderr}")
+
+            try:
+                wav = out_path.read_bytes()
+            except OSError as exc:
+                raise TtsError("piper_unavailable", f"No se pudo leer el WAV: {exc}") from exc
+
+            if not _is_wav(wav):
+                raise TtsError(
+                    "piper_unavailable",
+                    f"Piper no generó un WAV válido: {stderr or 'salida vacía'}",
                 )
-            except TimeoutError:
-                process.kill()
-                with suppress(Exception):
-                    await process.wait()
-                raise TtsError("piper_unavailable", "Piper tardó demasiado en sintetizar.") from None
-            if process.returncode != 0:
-                detail = stderr.decode("utf-8", errors="replace")[:400]
-                raise TtsError("piper_unavailable", f"Piper falló: {detail}")
-            return out_path.read_bytes()
+            return wav
         finally:
             try:
-                os.unlink(out_path)
+                out_path.unlink(missing_ok=True)
             except OSError:
                 pass

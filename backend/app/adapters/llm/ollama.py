@@ -6,6 +6,10 @@ import httpx
 from app.adapters.llm.base import LlmError
 from app.domain.models import ChatMessage
 
+# Room for a 5–8 sentence spoken reading plus a short greeting turn.
+NUM_PREDICT = 560
+NUM_CTX = 4096
+
 
 class OllamaProvider:
     def __init__(self, base_url: str, timeout: float = 180.0) -> None:
@@ -17,7 +21,7 @@ class OllamaProvider:
             "model": model,
             "stream": True,
             "keep_alive": "30m",
-            "options": {"temperature": 0.7, "num_predict": 220, "num_ctx": 1024},
+            "options": {"temperature": 0.7, "num_predict": NUM_PREDICT, "num_ctx": NUM_CTX},
             "messages": [{"role": m.role, "content": m.content} for m in messages],
         }
         url = f"{self._base_url}/api/chat"

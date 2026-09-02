@@ -1,24 +1,65 @@
 :root {
-  --bg: #08070b;
-  --panel: rgba(14, 13, 18, 0.86);
-  --text: #f3efe6;
-  --muted: #b7b0a3;
-  --gold: #e4c891;
-  --gold-2: #d4b57a;
-  --violet: #8b6ad6;
-  --think: #c084fc;
-  --write: #5dffc8;
-  --speak: #f0c56b;
-  --idle: #3ec8ff;
-  --danger: #ff8b9a;
-  --line: rgba(255, 255, 255, 0.12);
-  --font: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --bg: #07060a;
+  --velvet: #0b090f;
+  --ink: #110e16;
+  --panel: #100d14;
+  --text: #f3ece1;
+  --muted: #9a9184;
+  --gold: #d6b57a;
+  --gold-2: #c09a5c;
+  --gold-lit: #efd4a3;
+  --gold-deep: #6e542c;
+  --garnet: #7a2433;
+  --garnet-lit: #b33c4c;
+  --blood: #3a121c;
+  --steel: #8aa0b6;
+  --steel-2: #6d849c;
+  --steel-deep: #15202c;
+  --idle: #c09a5c;
+  --think: #b33c4c;
+  --write: #efd4a3;
+  --speak: #e8c890;
+  --danger: #d48a94;
+  --line: rgba(214, 181, 122, 0.18);
+  --font: "Source Sans 3", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --radius: 18px;
-  --radius-sm: 12px;
-  --focus: 0 0 0 2px #08070b, 0 0 0 4px var(--gold);
-  --console-compact-w: min(360px, 30vw);
-  --console-expanded-w: min(560px, 46vw);
+  --inscription: "Cinzel", "Cormorant Garamond", serif;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --focus: 0 0 0 2px #07060a, 0 0 0 4px var(--gold);
+  --console-compact-w: min(338px, 29vw);
+  --console-expanded-w: min(492px, 42vw);
+  --ease: cubic-bezier(.22, .68, .28, 1);
+  --dur: 380ms;
+  --dur-slow: 560ms;
+}
+
+.arcana[data-avatar="arcana"] {
+  --idle: #c09a5c;
+  --think: #b33c4c;
+  --write: #efd4a3;
+  --speak: #e8c890;
+  --accent: var(--gold);
+  --accent-2: var(--garnet-lit);
+  --wash: rgba(122, 36, 51, 0.22);
+}
+
+.arcana[data-avatar="arcano"] {
+  --gold: #9eb4c8;
+  --gold-2: #7e96ac;
+  --gold-lit: #d4e3ef;
+  --gold-deep: #3d5164;
+  --garnet: #2c445c;
+  --garnet-lit: #5b7a98;
+  --line: rgba(158, 180, 200, 0.18);
+  --idle: #7e96ac;
+  --think: #5b7a98;
+  --write: #c5d6e6;
+  --speak: #b7cce0;
+  --accent: var(--steel);
+  --accent-2: #4d6a86;
+  --wash: rgba(26, 38, 51, 0.38);
+  --focus: 0 0 0 2px #07060a, 0 0 0 4px var(--steel);
 }
 
 * { box-sizing: border-box; }
@@ -36,4 +77,4 @@ button, textarea, input { font: inherit; }
 button { border-radius: var(--radius-sm); cursor: pointer; touch-action: manipulation; }
 :focus { outline: none; }
 :focus-visible { box-shadow: var(--focus); }
-::selection { background: rgba(228, 200, 145, .28); color: #fff; }
+::selection { background: rgba(214, 181, 122, .28); color: #fff; }

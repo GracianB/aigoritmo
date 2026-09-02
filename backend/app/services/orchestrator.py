@@ -14,6 +14,7 @@ from app.domain.avatars import AvatarCatalog
 from app.domain.models import ChatMessage
 from app.domain.intent import wants_spread
 from app.domain.sentences import split_ready_sentences
+from app.domain.speech import prepare_for_speech
 from app.services.audio_clips import AudioClipStore
 from app.services.conversations import ConversationStore
 from app.services.images import ImageStore
@@ -76,24 +77,36 @@ class Orchestrator:
             briefing = "[TIRADA ARCANA]\n" + spread.briefing()
             self._conversations.append(conv.id, ChatMessage(role="system", content=briefing))
             conv = self._conversations.get(conv.id)
-            png = await generate_scene(spread)
-            caption = "La carta"
-            if png:
-                caption = "Visión de la tirada"
-                image_id = self._images.save_png(png)
-            else:
-                image_id = self._images.save_png(render_spread(spread))
+            cards_payload = [
+                {"position": c.position, "name": f"{c.roman} {c.name}"}
+                for c in spread.cards
+            ]
+            image_id = self._images.save_png(render_spread(spread))
             yield sse(
                 "image",
                 {
                     "url": f"/media/spreads/{image_id}.png",
-                    "caption": caption,
-                    "cards": [
-                        {"position": c.position, "name": f"{c.roman} {c.name}"}
-                        for c in spread.cards
-                    ],
+                    "caption": "La carta",
+                    "cards": cards_payload,
                 },
             )
+            painted = None
+            try:
+                painted = await asyncio.wait_for(generate_scene(spread), timeout=8.0)
+            except Exception:
+                logger.warning("pollinations skipped; keeping local card")
+            if painted:
+                image_id = self._images.save_png(painted)
+                yield sse(
+                    "image",
+                    {
+                        "url": f"/media/spreads/{image_id}.png",
+                        "caption": "La carta",
+                        "cards": cards_payload,
+                        "replace": True,
+                    },
+                )
+
 
         history = [
             ChatMessage(role="system", content=avatar.system_prompt),
@@ -194,16 +207,22 @@ class Orchestrator:
             avatar = self._catalog.get(avatar_id)
         except KeyError as exc:
             raise TtsError("unknown_avatar", f"Avatar desconocido: {avatar_id}") from exc
+        spoken = prepare_for_speech(text)
+        if not spoken:
+            return None
         tts = tts_provider_for(avatar.voice.provider, self._settings)
-        wav = await tts.synthesize(text, avatar.voice.voice_id, options=avatar.voice)
+        wav = await tts.synthesize(spoken, avatar.voice.voice_id, options=avatar.voice)
         if not wav:
             return None
         clip_id = self._clips.save(wav)
         return f"/api/audio/{clip_id}"
 
     async def _speak(self, tts, text: str, voice) -> AsyncIterator[str]:
+        spoken = prepare_for_speech(text)
+        if not spoken:
+            return
         try:
-            wav = await tts.synthesize(text, voice.voice_id, options=voice)
+            wav = await tts.synthesize(spoken, voice.voice_id, options=voice)
         except TtsError as exc:
             logger.warning("tts error: %s", exc)
             yield sse("error", {"code": exc.code, "message": exc.message})
@@ -211,4 +230,4 @@ class Orchestrator:
         if not wav:
             return
         clip_id = self._clips.save(wav)
-        yield sse("audio", {"url": f"/api/audio/{clip_id}", "text": text})
+        yield sse("audio", {"url": f"/api/audio/{clip_id}", "text": spoken})

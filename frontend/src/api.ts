@@ -2,7 +2,7 @@ export type ChatHandlers = {
   onMeta?: (conversationId: string) => void;
   onToken?: (text: string) => void;
   onAudio?: (url: string) => void;
-  onImage?: (url: string, caption: string, cards?: Array<{ position: string; name: string }>) => void;
+  onImage?: (url: string, caption: string, cards?: Array<{ position: string; name: string }>, replace?: boolean) => void;
   onError?: (code: string, message: string) => void;
   onDone?: () => void;
 };
@@ -79,6 +79,7 @@ function dispatchSse(block: string, handlers: ChatHandlers): void {
       payload.url,
       typeof payload.caption === "string" ? payload.caption : "",
       Array.isArray(payload.cards) ? payload.cards as Array<{ position: string; name: string }> : undefined,
+      payload.replace === true,
     );
   }
   if (event === "error") {
@@ -150,7 +151,7 @@ export async function analyzeImage(
   const body = (await response.json()) as VisionResult & { code?: string; message?: string };
   if (!response.ok) {
     if (body.code === "ollama_vision_unavailable" || body.code === "ollama_unavailable") {
-      throw new Error("La visión local no está lista. Ollama no responde o falta llama3.2-vision.");
+      throw new Error("La mirada a fotos no está lista ahora. Puedes seguir con la tirada sin subir nada.");
     }
     throw new Error(body.message || "No se pudo interpretar la imagen.");
   }

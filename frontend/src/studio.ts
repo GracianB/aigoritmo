@@ -21,9 +21,9 @@ type PresenceClip = { src: string; loops: number; id: "wizard" | "avatar" };
 
 const STARTERS: PromptChip[] = [
   { label: "Lanza la tirada", text: "Sí, lanza una tirada de una carta sobre lo que más me inquieta ahora.", draw: true },
-  { label: "Amor", text: "Quiero una lectura sobre el amor y lo que se está moviendo en mis vínculos.", draw: true },
-  { label: "Trabajo", text: "Necesito claridad sobre mi camino laboral ahora mismo.", draw: true },
-  { label: "Este mes", text: "¿Qué energía me acompaña este mes?", draw: true },
+  { label: "Amor", text: "Quiero una lectura de una carta sobre el amor y lo que se mueve en mis vínculos.", draw: true },
+  { label: "Trabajo", text: "Tira una carta sobre mi camino laboral ahora mismo.", draw: true },
+  { label: "Este mes", text: "¿Qué energía me acompaña este mes? Una carta basta.", draw: true },
 ];
 
 const FOLLOWUPS: PromptChip[] = [
@@ -162,7 +162,7 @@ function renderStudio(root: HTMLElement): void {
         <div class="studio-alert" id="studio-alert" hidden role="status"></div>
 
         <div class="quick-actions${vision ? "" : " is-solo"}">
-          <button class="ritual-btn" id="draw" type="button"><span aria-hidden="true">✦</span><b>Lanzar tirada</b><small>una carta, aquí mismo</small></button>
+          <button class="ritual-btn" id="draw" type="button"><span aria-hidden="true">✦</span><b>Tirar una carta</b><small>un solo arcano mayor</small></button>
           ${vision ? `<button class="ritual-btn" id="vision" type="button"><span aria-hidden="true">◈</span><b>Opcional: tu foto</b><small>solo si quieres que mire algo tuyo</small></button>` : ""}
           <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
         </div>
@@ -181,7 +181,7 @@ function renderStudio(root: HTMLElement): void {
 
         <form class="composer" id="composer">
           <label class="sr-only" for="input">Escribe tu consulta</label>
-          <textarea id="input" rows="1" maxlength="8000" placeholder="Dile qué te inquieta o pide una tirada. No hace falta enviar fotos." autocomplete="off"></textarea>
+          <textarea id="input" rows="1" maxlength="8000" placeholder="Dile qué te inquieta. Un saludo no lanza cartas; pídele una tirada cuando quieras." autocomplete="off"></textarea>
           <button class="mic" id="mic" type="button" title="Hablar" aria-label="Dictar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/></svg>
           </button>
@@ -189,7 +189,7 @@ function renderStudio(root: HTMLElement): void {
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.6 21 12 3.4 3.4l.1 6.7L15 12 3.5 13.9z"/></svg>
           </button>
         </form>
-        <p class="disclaimer">El tarot es simbólico. ${escapeHtml(avatar.name)} genera una carta: no tienes que subir nada. Voz local Piper.</p>
+        <p class="disclaimer">El tarot es simbólico, no un dictamen. ${escapeHtml(avatar.name)} tira una sola carta: no hace falta subir nada.</p>
       </section>
     </main>
   `;
@@ -226,7 +226,21 @@ function bindStudio(root: HTMLElement): void {
     if (state.muted) stopAudio();
   });
   root.querySelector("#replay")?.addEventListener("click", () => {
-    if (lastSpoken) void speakLine(lastSpoken);
+    if (lastSpoken) {
+      void speakLine(lastSpoken);
+      return;
+    }
+    const host = root.querySelector("#studio-alert") as HTMLElement | null;
+    if (!host || !host.hidden) return;
+    host.hidden = false;
+    host.className = "studio-alert is-soft";
+    host.textContent = "Aún no hay frase para repetir.";
+    window.setTimeout(() => {
+      if (host.textContent === "Aún no hay frase para repetir.") {
+        host.hidden = true;
+        host.replaceChildren();
+      }
+    }, 2200);
   });
   root.querySelector("#reset")?.addEventListener("click", () => resetConversation(root));
   root.querySelector("#draw")?.addEventListener("click", () => void drawCards(root));
@@ -426,7 +440,9 @@ function bindMic(root: HTMLElement): void {
 function renderSuggestions(root: HTMLElement, chips: PromptChip[]): void {
   const wrap = root.querySelector("#suggestions");
   if (!wrap) return;
-  wrap.innerHTML = chips
+  const usable = chips.filter((chip) => chip.text.trim());
+  wrap.hidden = usable.length === 0;
+  wrap.innerHTML = usable
     .map((chip) => `<button type="button" data-prompt="${escapeHtml(chip.text)}" data-draw="${chip.draw ? "1" : "0"}">${escapeHtml(chip.label)}</button>`)
     .join("");
 }
@@ -476,7 +492,7 @@ function clearImage(root: HTMLElement): void {
   const preview = root.querySelector("#image-preview") as HTMLElement | null;
   if (preview) preview.hidden = true;
   const text = root.querySelector("#input") as HTMLTextAreaElement | null;
-  if (text) text.placeholder = "Dile qué te inquieta o pide una tirada. No hace falta enviar fotos.";
+  if (text) text.placeholder = "Dile qué te inquieta. Un saludo no lanza cartas; pídele una tirada cuando quieras.";
 }
 
 async function drawCards(root: HTMLElement): Promise<void> {
@@ -509,7 +525,7 @@ function wantsSpread(text: string): boolean {
     return false;
   }
   if (/^(si|ok|vale|adelante|hazlo|dale|lanza|tira)[!.?]*$/.test(t)) return true;
-  return /\b(tirada|tarot|tira(r|me)? las cartas|otra tirada|haz(me)? una (tirada|lectura)|lanza(me)? (una )?tirada)\b/.test(t);
+  return /\b(tirada|tarot|cartas|lectura|tira(r|me)? las cartas|otra tirada|haz(me)? una (tirada|lectura)|lanza(me)? (una )?tirada|una carta)\b/.test(t);
 }
 
 async function runChat(root: HTMLElement, text: string, draw: boolean): Promise<void> {
@@ -530,7 +546,7 @@ async function runChat(root: HTMLElement, text: string, draw: boolean): Promise<
         if (state.busy && !playing) setPresence("writing");
       },
       onAudio: (url) => enqueueAudio(url),
-      onImage: (url, caption, cards) => addSpread(transcript, url, caption, cards),
+      onImage: (url, caption, cards, replace) => addSpread(transcript, url, caption, cards, replace),
       onError: (code, message) => {
         failed = true;
         lastFailed = { text, draw };
@@ -585,6 +601,13 @@ function setBusy(root: HTMLElement, busy: boolean): void {
   (root.querySelector("#mic") as HTMLButtonElement).disabled = busy;
   (root.querySelector("#thinking") as HTMLElement).hidden = !busy;
   root.querySelector(".console")?.setAttribute("aria-busy", String(busy));
+  root.querySelectorAll("#avatar-switch button").forEach((btn) => {
+    (btn as HTMLButtonElement).disabled = busy;
+  });
+  const reset = root.querySelector("#reset") as HTMLButtonElement | null;
+  if (reset) reset.disabled = busy;
+  const input = root.querySelector("#input") as HTMLTextAreaElement | null;
+  if (input) input.disabled = busy;
   const suggestions = root.querySelector("#suggestions") as HTMLElement | null;
   if (suggestions) suggestions.hidden = busy;
   if (busy) {
@@ -627,7 +650,19 @@ function addSpread(
   url: string,
   caption: string,
   cards?: Array<{ position: string; name: string }>,
+  replace = false,
 ): void {
+  if (replace) {
+    const existing = transcript.querySelector("figure.spread:last-of-type") as HTMLElement | null;
+    const img = existing?.querySelector("img");
+    if (existing && img) {
+      img.src = url;
+      img.alt = caption || "Carta de tarot";
+      const strong = existing.querySelector("figcaption strong");
+      if (strong) strong.textContent = caption || "La carta";
+      return;
+    }
+  }
   const wrap = document.createElement("figure");
   wrap.className = "spread";
   const frame = document.createElement("div");
@@ -658,7 +693,7 @@ function addSpread(
     frame.classList.add("is-missing");
     const fallback = document.createElement("p");
     fallback.className = "spread__fallback";
-    fallback.textContent = "La carta no se pudo mostrar. La lectura sigue en el texto.";
+    fallback.textContent = "La visión no llegó. El nombre de la carta está abajo; la lectura sigue.";
     img.replaceWith(fallback);
   });
   pin();
@@ -673,6 +708,12 @@ function addUserImage(transcript: HTMLElement, url: string, prompt: string): voi
   const fig = document.createElement("figcaption");
   fig.textContent = prompt;
   wrap.append(img, fig);
+  img.addEventListener("error", () => {
+    img.replaceWith(Object.assign(document.createElement("p"), {
+      className: "spread__fallback",
+      textContent: "No pude mostrar esa foto. Puedes describirla en el chat.",
+    }));
+  });
   transcript.append(wrap);
   stickTranscript(transcript);
 }
@@ -705,13 +746,13 @@ async function checkHealth(root: HTMLElement): Promise<void> {
     if (!health.ollama || !health.ollama_chat_ready) {
       host.hidden = false;
       host.className = "studio-alert";
-      host.innerHTML = `<strong>Ollama no responde.</strong> Arráncalo en esta máquina y comprueba el modelo <code>${escapeHtml(health.chat_model || "llama3.2:3b")}</code>. Hasta entonces no podrá interpretar.`;
+      host.innerHTML = "<strong>El intérprete local no responde.</strong> Arráncalo con scripts/start-ollama.ps1. Hasta entonces no podrá leer.";
       return;
     }
     if (!health.piper_executable) {
       host.hidden = false;
       host.className = "studio-alert is-soft";
-      host.innerHTML = "<strong>La voz no está lista.</strong> Puedes leer la consulta; Piper no hablará hasta que el ejecutable esté disponible.";
+      host.innerHTML = "<strong>La voz no está lista.</strong> Puedes leer la consulta; el audio llegará cuando la voz local esté disponible.";
       return;
     }
     host.hidden = true;
@@ -773,9 +814,9 @@ function setSpeaking(on: boolean): void {
 
 function setPresence(mode: PresenceState): void {
   const labels: Record<PresenceState, string> = {
-    idle: "en espera",
-    thinking: "interpretando",
-    writing: "escribiendo",
+    idle: "escucha",
+    thinking: "en trance",
+    writing: "dictando",
     speaking: "hablando",
   };
   document.querySelectorAll(".presence, .arcana").forEach((el) => {
@@ -792,13 +833,13 @@ function explain(code: string, message: string): string {
     return "El estudio no responde. Comprueba que FastAPI sigue en 127.0.0.1:8000.";
   }
   if (code === "ollama_unavailable") {
-    return "Ollama no responde. Arráncalo en esta máquina (`scripts/start-ollama.ps1`) y comprueba el modelo llama3.2:3b.";
+    return "El intérprete local no responde. Arráncalo en esta máquina (scripts/start-ollama.ps1).";
   }
   if (code === "ollama_vision_unavailable") {
-    return "La visión local no está lista. Ejecuta: ollama pull llama3.2-vision:11b";
+    return "La mirada a fotos no está lista ahora. Puedes seguir con la tirada sin subir nada.";
   }
   if (code === "piper_unavailable") {
-    return `La voz no está lista. ${message}`;
+    return "La voz no está lista en esta máquina. Puedes seguir leyendo.";
   }
   return message;
 }
@@ -819,7 +860,7 @@ function gateHtml(): string {
       <div class="gate__orb">${orbMarkup()}</div>
       <p class="gate__kicker">Consulta privada</p>
       <h1 id="gate-title">Arcana</h1>
-      <p class="gate__lede" id="gate-lede">Tarot, voz y visión en local. Una carta, una presencia. Nada de espectáculo.</p>
+      <p class="gate__lede" id="gate-lede">Una sola carta. Una voz. Aquí, en tu máquina. Pregunta; ella tira.</p>
       <button class="enter" id="enter" type="button">Entrar</button>
       <small class="gate__note">Nada sale de tu máquina · 127.0.0.1</small>
     </div>
