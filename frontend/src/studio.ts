@@ -14,7 +14,9 @@ type FailedTurn = { text: string; draw: boolean };
 
 const DEMO_AVATARS = ["arcana", "arcano"] as const;
 const CLIP_GAP_MS = 850;
+const SPEECH_GAP_MS = 280;
 const WIZARD_CLIP = "/media/videos/wizard.mp4?v=land";
+const HEALTH_MS = 45000;
 
 type PresenceState = "idle" | "thinking" | "writing" | "speaking";
 type PresenceClip = { src: string; loops: number; id: "wizard" | "avatar" };
@@ -49,6 +51,8 @@ let welcomePending = false;
 let lastFailed: FailedTurn | null = null;
 let previewObjectUrl: string | null = null;
 let presenceGen = 0;
+let healthTimer = 0;
+let hasSpread = false;
 
 export async function mountStudio(root: HTMLElement): Promise<void> {
   renderGate(root);
@@ -98,6 +102,26 @@ async function enter(root: HTMLElement): Promise<void> {
   renderStudio(root);
 }
 
+
+function sigilMarkup(): string {
+  return `<svg class="brand__mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.8 13.8 8.6 20.6 10.4 13.8 12.2 12 19 10.2 12.2 3.4 10.4 10.2 8.6Z"/></svg>`;
+}
+
+function iconVoice(muted: boolean): string {
+  const glyph = muted
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="m16 9 5 6M21 9l-5 6"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M18.7 6.3a8 8 0 0 1 0 11.4"/></svg>`;
+  return `${glyph}<span>Voz</span>`;
+}
+
+function iconReplay(): string {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span>O\u00edr</span>`;
+}
+
+function iconReset(): string {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg><span>Nueva</span>`;
+}
+
 function orbMarkup(): string {
   return `<div class="orb" aria-hidden="true"><span class="orb__aura"></span><span class="orb__mist"></span><span class="orb__plasma"></span><span class="orb__swirl"></span><span class="orb__glass"></span><span class="orb__core"></span><span class="orb__ring"></span><span class="orb__shine"></span><span class="orb__rim"></span></div>`;
 }
@@ -116,6 +140,7 @@ function canSee(avatar: Avatar): boolean {
 }
 
 function renderStudio(root: HTMLElement): void {
+  hasSpread = false;
   const avatar = state.avatar!;
   const clips = clipsFor(avatar);
   const media = clips.length
@@ -131,31 +156,33 @@ function renderStudio(root: HTMLElement): void {
           ${media}
           <div class="presence__cluster">
             ${orbMarkup()}
-            <p class="presence__caption" id="presence-caption">en calma</p>
+            <p class="presence__caption" id="presence-caption">la sala en calma</p>
           </div>
         </div>
       </div>
 
       <header class="arcana__header">
-        <div class="brand"><span class="brand__sigil" aria-hidden="true">✦</span><span class="brand__house">Aigoritmo</span><span class="brand__name">${escapeHtml(avatar.name)}</span></div>
+        <div class="brand">${sigilMarkup()}<span class="brand__house">Aigoritmo</span><span class="brand__name">${escapeHtml(avatar.name)}</span></div>
         <div class="status">
           <div class="avatar-switch" id="avatar-switch" role="tablist" aria-label="Elegir presencia">
             ${state.roster.map((item) => `<button type="button" role="tab" data-avatar="${item.id}" aria-selected="${item.id === avatar.id}" class="${item.id === avatar.id ? "is-active" : ""}">${escapeHtml(item.name)}</button>`).join("")}
           </div>
-          <span class="status__dot" aria-hidden="true"></span><span id="voice-status">en calma</span>
+          <span class="status__dot" aria-hidden="true"></span><span id="voice-status">la sala en calma</span>
         </div>
       </header>
 
       <section class="console" aria-label="Consulta">
+        <div class="console__ornament" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
         <div class="console__head">
           <div>
+            <em class="console__kicker">Salón</em>
             <strong>La mesa</strong>
             <span id="feature">${escapeHtml(avatar.feature)}</span>
           </div>
           <div class="console__head-actions">
-            <button class="icon-btn" id="mute" type="button" aria-pressed="${state.muted}" title="Activar o silenciar voz">${state.muted ? "○ Voz" : "◉ Voz"}</button>
-            <button class="icon-btn" id="replay" type="button" title="Repetir última frase">↺ Oír</button>
-            <button class="icon-btn" id="reset" type="button" title="Nueva conversación">↻ Nueva</button>
+            <button class="icon-btn" id="mute" type="button" aria-pressed="${state.muted}" title="Activar o silenciar voz">${iconVoice(state.muted)}</button>
+            <button class="icon-btn" id="replay" type="button" title="Repetir última frase">${iconReplay()}</button>
+            <button class="icon-btn" id="reset" type="button" title="Nueva conversación">${iconReset()}</button>
           </div>
         </div>
 
@@ -200,7 +227,9 @@ function renderStudio(root: HTMLElement): void {
   bindStudio(root);
   bindPresence(root);
   bindTranscript(transcript);
+  window.clearInterval(healthTimer);
   void checkHealth(root);
+  healthTimer = window.setInterval(() => void checkHealth(root), HEALTH_MS);
   if (!avatar.video) setPresence("idle");
 }
 
@@ -221,7 +250,7 @@ function bindStudio(root: HTMLElement): void {
   root.querySelector("#mute")?.addEventListener("click", (event) => {
     state.muted = !state.muted;
     const button = event.currentTarget as HTMLButtonElement;
-    button.textContent = state.muted ? "○ Voz" : "◉ Voz";
+    button.innerHTML = iconVoice(state.muted);
     button.setAttribute("aria-pressed", String(state.muted));
     if (state.muted) stopAudio();
   });
@@ -451,6 +480,12 @@ function resetConversation(root: HTMLElement): void {
   if (state.busy || !state.avatar) return;
   state.conversationId = null;
   lastFailed = null;
+  hasSpread = false;
+  const draw = root.querySelector("#draw") as HTMLButtonElement | null;
+  const title = draw?.querySelector("b");
+  const note = draw?.querySelector("small");
+  if (title) title.textContent = "Tirar una carta";
+  if (note) note.textContent = "un solo arcano mayor";
   clearImage(root);
   stopAudio();
   const transcript = root.querySelector("#transcript") as HTMLElement;
@@ -532,7 +567,7 @@ async function runChat(root: HTMLElement, text: string, draw: boolean): Promise<
   if (!state.avatar) return;
   const transcript = root.querySelector("#transcript") as HTMLElement;
   lastFailed = null;
-  setBusy(root, true);
+  setBusy(root, true, draw ? "draw" : "chat");
   addBubble(transcript, "user", draw ? `✦ ${text}` : text);
   const bot = addBubble(transcript, "bot", "");
   let failed = false;
@@ -571,7 +606,7 @@ async function runVision(root: HTMLElement, prompt: string): Promise<void> {
   const file = state.selectedImage;
   const previewUrl = URL.createObjectURL(file);
   addUserImage(transcript, previewUrl, prompt);
-  setBusy(root, true);
+  setBusy(root, true, "vision");
   clearImage(root);
   try {
     const result = await analyzeImage(file, state.avatar.id, state.conversationId, prompt);
@@ -592,7 +627,7 @@ function retryChips(): PromptChip[] {
   return [{ label: "Reintentar", text: lastFailed?.text ?? "", draw: lastFailed?.draw }];
 }
 
-function setBusy(root: HTMLElement, busy: boolean): void {
+function setBusy(root: HTMLElement, busy: boolean, kind: "chat" | "draw" | "vision" = "chat"): void {
   state.busy = busy;
   (root.querySelector("#send") as HTMLButtonElement).disabled = busy;
   (root.querySelector("#draw") as HTMLButtonElement).disabled = busy;
@@ -610,6 +645,16 @@ function setBusy(root: HTMLElement, busy: boolean): void {
   if (input) input.disabled = busy;
   const suggestions = root.querySelector("#suggestions") as HTMLElement | null;
   if (suggestions) suggestions.hidden = busy;
+  const line = root.querySelector("#thinking em");
+  if (line && busy) {
+    const name = state.avatar?.name ?? "Arcana";
+    line.textContent =
+      kind === "draw"
+        ? "La carta cae sobre el paño."
+        : kind === "vision"
+          ? `${name} mira la imagen.`
+          : `${name} interpreta.`;
+  }
   if (busy) {
     revealOrb(root);
     setPresence("thinking");
@@ -622,6 +667,7 @@ function setBusy(root: HTMLElement, busy: boolean): void {
 function addBubble(transcript: HTMLElement, role: "user" | "bot" | "error", text: string): HTMLElement {
   const el = document.createElement("article");
   el.className = `bubble bubble--${role}`;
+  if (role === "bot") el.classList.add("is-letter");
   const label = document.createElement("span");
   label.className = "bubble__label";
   label.textContent = role === "bot" ? (state.avatar?.name.toUpperCase() ?? "AVATAR") : role === "user" ? "TÚ" : "SISTEMA";
@@ -645,6 +691,36 @@ function addError(transcript: HTMLElement, text: string): void {
   content.parentElement?.append(retry);
 }
 
+function plaqueFrom(
+  caption: string,
+  cards?: Array<{ position: string; name: string }>,
+): { roman: string; title: string } {
+  const card = cards?.[0];
+  const captionText = caption.trim();
+  if (card) {
+    const pos = card.position.trim();
+    const name = card.name.trim();
+    if (pos && pos.toLowerCase() !== "carta") return { roman: pos, title: name || captionText || "La carta" };
+    const match = `${name || captionText}`.match(/^([IVXLCDM0]+)\s+(.+)$/);
+    if (match) return { roman: match[1], title: match[2] };
+    if (name) return { roman: "", title: name };
+  }
+  const match = captionText.match(/^([IVXLCDM0]+)\s+(.+)$/);
+  if (match) return { roman: match[1], title: match[2] };
+  return { roman: "", title: captionText || "La carta" };
+}
+
+function markSpreadDrawn(root?: HTMLElement): void {
+  hasSpread = true;
+  const host = root ?? document.querySelector(".arcana")?.closest("#app") ?? document.body;
+  const draw = host.querySelector("#draw") as HTMLButtonElement | null;
+  if (!draw) return;
+  const title = draw.querySelector("b");
+  const note = draw.querySelector("small");
+  if (title) title.textContent = "Otra tirada";
+  if (note) note.textContent = "un solo arcano, de nuevo";
+}
+
 function addSpread(
   transcript: HTMLElement,
   url: string,
@@ -652,44 +728,46 @@ function addSpread(
   cards?: Array<{ position: string; name: string }>,
   replace = false,
 ): void {
+  const plaque = plaqueFrom(caption, cards);
+  const label = [plaque.roman, plaque.title].filter(Boolean).join(" ");
+  markSpreadDrawn(transcript.closest(".arcana") ? (transcript.closest(".arcana") as HTMLElement) : undefined);
   if (replace) {
     const existing = transcript.querySelector("figure.spread:last-of-type") as HTMLElement | null;
     const img = existing?.querySelector("img");
     if (existing && img) {
       img.src = url;
-      img.alt = caption || "Carta de tarot";
+      img.alt = label || "Carta de tarot";
       const strong = existing.querySelector("figcaption strong");
-      if (strong) strong.textContent = caption || "La carta";
+      const romanEl = existing.querySelector(".spread__roman");
+      if (strong) strong.textContent = plaque.title;
+      if (romanEl && plaque.roman) romanEl.textContent = plaque.roman;
+      else if (!romanEl && plaque.roman) {
+        const em = document.createElement("em");
+        em.className = "spread__roman";
+        em.textContent = plaque.roman;
+        existing.querySelector("figcaption")?.prepend(em);
+      }
       return;
     }
   }
   const wrap = document.createElement("figure");
   wrap.className = "spread";
+  if (!prefersReducedMotion()) wrap.classList.add("is-deal");
   const stage = document.createElement("div");
   stage.className = "spread__stage";
   const frame = document.createElement("div");
   frame.className = "spread__frame";
   const img = document.createElement("img");
   img.src = url;
-  img.alt = caption || "Carta de tarot";
+  img.alt = label || "Carta de tarot";
   img.loading = "lazy";
   frame.append(img);
   stage.append(frame);
   wrap.append(stage);
   const fig = document.createElement("figcaption");
   fig.className = "spread__plaque";
-  const roman = cards?.[0]?.position ? `<em class="spread__roman">${escapeHtml(cards[0].position)}</em>` : "";
-  fig.innerHTML = `${roman}<strong>${escapeHtml(caption || "La carta")}</strong>`;
-  if (cards?.length) {
-    const list = document.createElement("div");
-    list.className = "spread__cards";
-    for (const card of cards) {
-      const chip = document.createElement("span");
-      chip.textContent = card.name;
-      list.append(chip);
-    }
-    fig.append(list);
-  }
+  const roman = plaque.roman ? `<em class="spread__roman">${escapeHtml(plaque.roman)}</em>` : "";
+  fig.innerHTML = `${roman}<strong>${escapeHtml(plaque.title)}</strong>`;
   wrap.append(fig);
   transcript.append(wrap);
   const pin = () => stickTranscript(transcript);
@@ -698,7 +776,7 @@ function addSpread(
     frame.classList.add("is-missing");
     const fallback = document.createElement("p");
     fallback.className = "spread__fallback";
-    fallback.textContent = "La visión no llegó. El nombre de la carta está abajo; la lectura sigue.";
+    fallback.textContent = "La visi\u00f3n no lleg\u00f3. El nombre de la carta est\u00e1 abajo; la lectura sigue.";
     img.replaceWith(fallback);
   });
   pin();
@@ -799,6 +877,8 @@ async function playNext(): Promise<void> {
       next.onerror = () => resolve();
     });
   } catch { /* autoplay may be blocked */ }
+  const gap = prefersReducedMotion() ? 0 : SPEECH_GAP_MS;
+  if (gap) await new Promise((resolve) => window.setTimeout(resolve, gap));
   await playNext();
 }
 
@@ -819,10 +899,10 @@ function setSpeaking(on: boolean): void {
 
 function setPresence(mode: PresenceState): void {
   const labels: Record<PresenceState, string> = {
-    idle: "en calma",
-    thinking: "en trance",
-    writing: "escribe",
-    speaking: "habla",
+    idle: "la sala en calma",
+    thinking: "baraja en silencio",
+    writing: "escribe la lectura",
+    speaking: "te habla",
   };
   document.querySelectorAll(".presence, .arcana").forEach((el) => {
     (el as HTMLElement).dataset.state = mode;
@@ -861,8 +941,16 @@ function gateHtml(): string {
   return `<div class="gate" role="dialog" aria-labelledby="gate-title" aria-describedby="gate-lede">
     <video class="gate__video" autoplay muted loop playsinline poster="/media/image/arcana.jpg?v=land" src="/media/videos/portada.mp4" aria-hidden="true"></video>
     <div class="gate__veil"></div>
+    <div class="gate__dust" aria-hidden="true"></div>
+    <div class="gate__frame" aria-hidden="true">
+      <span class="gate__corner gate__corner--tl"></span>
+      <span class="gate__corner gate__corner--tr"></span>
+      <span class="gate__corner gate__corner--bl"></span>
+      <span class="gate__corner gate__corner--br"></span>
+    </div>
     <div class="gate__copy">
       <p class="gate__kicker">Salón privado</p>
+      <p class="gate__house">Casa Aigoritmo</p>
       <h1 id="gate-title">Arcana</h1>
       <div class="gate__rule" aria-hidden="true"></div>
       <p class="gate__lede" id="gate-lede">Cierra la puerta. Una carta. Una voz. Nada de esto sale de la habitación.</p>

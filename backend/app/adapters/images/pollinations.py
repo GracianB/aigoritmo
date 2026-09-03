@@ -6,18 +6,25 @@ import httpx
 
 from app.services.tarot import Spread
 
+PALETTE_EN = {
+    "arcana": "candlelit garnet velvet, warm gold leaf, blood-red shadows, museum oil",
+    "arcano": "moonlit steel-blue velvet, cold silver leaf, indigo shadows, museum oil",
+}
+
 
 def scene_prompt(spread: Spread) -> str:
     card = spread.cards[0]
     keywords = card.keywords.replace(",", ", ")
+    palette = PALETTE_EN.get(spread.avatar_id, PALETTE_EN["arcana"])
+    motif = card.motif_en.strip()
     return (
         "a single tarot card in classic tarot-card shape, vertical rectangular naipe "
-        "with ornate gold filigree border and rounded corners, "
-        f"major arcana {card.name} as the painted scene inside the card, "
-        f"symbolic motifs of {keywords}, "
-        "cinematic chiaroscuro oil painting, candlelit, adult, not cartoon, not childish, "
-        "vintage tarot playing card, one card only, no table, no extra cards, "
-        "mystical dark background, no letters, no watermark, no text"
+        "with ornate filigree border and rounded corners, "
+        f"major arcana {card.name} painted as the scene inside the card: {motif}, "
+        f"symbolic motifs of {keywords}, {palette}, "
+        "cinematic chiaroscuro oil on aged gesso, gallery lighting, adult, not cartoon, not childish, "
+        "vintage tarot playing card filling the frame, one card only, no table, no extra cards, "
+        "no letters, no watermark, no text, no caption, no typography"
     )
 
 
@@ -28,7 +35,7 @@ def scene_seed(spread: Spread) -> int:
 
 
 async def generate_scene(spread: Spread) -> bytes | None:
-    prompt = quote(scene_prompt(spread)[:420])
+    prompt = quote(scene_prompt(spread)[:480])
     seed = scene_seed(spread)
     url = (
         f"https://image.pollinations.ai/prompt/{prompt}"

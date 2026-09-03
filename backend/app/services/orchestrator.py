@@ -77,8 +77,9 @@ class Orchestrator:
             briefing = "[TIRADA ARCANA]\n" + spread.briefing()
             self._conversations.append(conv.id, ChatMessage(role="system", content=briefing))
             conv = self._conversations.get(conv.id)
+            shown = spread.cards[0]
             cards_payload = [
-                {"position": c.position, "name": f"{c.roman} {c.name}"}
+                {"position": c.roman, "name": c.name}
                 for c in spread.cards
             ]
             image_id = self._images.save_png(render_spread(spread))
@@ -86,7 +87,7 @@ class Orchestrator:
                 "image",
                 {
                     "url": f"/media/spreads/{image_id}.png",
-                    "caption": "La carta",
+                    "caption": f"{shown.roman} {shown.name}",
                     "cards": cards_payload,
                 },
             )
@@ -101,7 +102,7 @@ class Orchestrator:
                     "image",
                     {
                         "url": f"/media/spreads/{image_id}.png",
-                        "caption": "La carta",
+                        "caption": f"{shown.roman} {shown.name}",
                         "cards": cards_payload,
                         "replace": True,
                     },

@@ -1,4 +1,4 @@
-# Aigoritmo — Arcana (demo local)
+# Aigoritmo - Arcana (demo local)
 
 Estudio local de avatares. La demo es **Arcana** y su gemelo **Arcano**: tarot cinematográfico en español, una sola carta, voz en local.
 
@@ -7,7 +7,7 @@ Estudio local de avatares. La demo es **Arcana** y su gemelo **Arcano**: tarot c
 - Conversación con memoria de sesión
 - **Una carta** del Arcano Mayor (nunca un abanico de tres ni pasado/presente/futuro)
 - Un saludo **no** lanza tirada
-- Imagen de la carta (red de imágenes; si falla, se dibuja en local)
+- Imagen de la carta al instante (dibujo local; Pollinations puede sustituirla en unos segundos)
 - Voz en esta máquina. El consultante no ve nombres de modelos
 
 ## Cómo ejecutarlo
@@ -17,7 +17,11 @@ powershell -File X:\GitHub\systems-lab\aigoritmo\scripts\start-ollama.ps1
 powershell -File X:\GitHub\systems-lab\aigoritmo\scripts\start-demo.ps1
 ```
 
-Abre **http://127.0.0.1:5173**. Salud: http://127.0.0.1:8000/health
+Abre **http://127.0.0.1:8000** (FastAPI sirve `frontend/dist`). Vite en :5173 es opcional, para desarrollar el frontend.
+
+Salud: http://127.0.0.1:8000/health
+
+Atajo: `X:\PROBAR-ARCANA.bat` o el `PROBAR-ARCANA.ps1` de esta carpeta.
 
 Detalle en `COMO-EJECUTAR.md`.
 

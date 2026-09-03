@@ -69,7 +69,9 @@ html, body, #app {
   height: 100%;
   max-height: 100dvh;
   overflow: hidden;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(122, 36, 51, .16), transparent 42%),
+    var(--bg);
   color: var(--text);
   font-family: var(--font);
 }
