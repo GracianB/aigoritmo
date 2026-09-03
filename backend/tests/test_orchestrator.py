@@ -133,3 +133,46 @@ async def test_lanza_tirada_emits_image_when_pollinations_hangs(orchestrator, mo
             break
     assert "event: image" in blob
     assert "/media/spreads/" in blob
+
+
+@pytest.mark.asyncio
+async def test_tokens_are_not_blocked_by_slow_pollinations(orchestrator, monkeypatch):
+    import asyncio
+    import time
+
+    async def hang(_spread):
+        await asyncio.sleep(8)
+        return None
+
+    monkeypatch.setattr("app.services.orchestrator.generate_scene", hang)
+    monkeypatch.setattr("app.services.orchestrator.llm_provider_for", lambda n, s: FakeLlm(["La carta habla. "]))
+    monkeypatch.setattr("app.services.orchestrator.tts_provider_for", lambda n, s: FakeTts())
+    started = time.monotonic()
+    blob = ""
+    async for chunk in orchestrator.chat("arcana", "lanza una tirada", None, True):
+        blob += chunk
+        if "event: token" in blob and "event: image" in blob:
+            break
+    elapsed = time.monotonic() - started
+    assert "event: image" in blob
+    assert "event: token" in blob
+    assert elapsed < 2.5
+
+
+@pytest.mark.asyncio
+async def test_pollinations_replace_arrives_during_stream(orchestrator, monkeypatch):
+    from app.services.tarot import draw_spread, render_spread
+
+    png = render_spread(draw_spread("amor", "arcana"))
+
+    async def paint(_spread):
+        return png
+
+    monkeypatch.setattr("app.services.orchestrator.generate_scene", paint)
+    monkeypatch.setattr("app.services.orchestrator.llm_provider_for", lambda n, s: FakeLlm(["La Estrella alivia. "]))
+    monkeypatch.setattr("app.services.orchestrator.tts_provider_for", lambda n, s: FakeTts())
+    blob = ""
+    async for chunk in orchestrator.chat("arcana", "haz una tirada sobre el amor", None, True):
+        blob += chunk
+    assert blob.count("event: image") >= 2
+    assert '"replace": true' in blob

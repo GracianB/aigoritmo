@@ -13,13 +13,13 @@ from app.core.config import Settings
 from app.domain.avatars import AvatarCatalog
 from app.domain.models import ChatMessage
 from app.domain.intent import wants_spread
-from app.domain.sentences import split_ready_sentences
+from app.domain.sentences import split_ready_sentences, take_speakable
 from app.domain.speech import prepare_for_speech
 from app.services.audio_clips import AudioClipStore
 from app.services.conversations import ConversationStore
 from app.services.images import ImageStore
 from app.adapters.images.pollinations import generate_scene
-from app.services.tarot import draw_spread, render_spread
+from app.services.tarot import Spread, draw_spread, render_spread
 from app.services.vision import analyze_image as analyze_visual
 
 logger = logging.getLogger(__name__)
@@ -71,6 +71,9 @@ class Orchestrator:
         self._conversations.append(conv.id, ChatMessage(role="user", content=user_text))
         yield sse("meta", {"conversation_id": conv.id, "avatar_id": avatar.id})
 
+        paint_task: asyncio.Task[bytes | None] | None = None
+        cards_payload: list[dict[str, str]] = []
+        caption = ""
         should_draw = avatar.id in {"arcana", "arcano"} and wants_spread(user_text, explicit=draw_cards)
         if should_draw:
             spread = draw_spread(user_text, avatar.id)
@@ -78,36 +81,18 @@ class Orchestrator:
             self._conversations.append(conv.id, ChatMessage(role="system", content=briefing))
             conv = self._conversations.get(conv.id)
             shown = spread.cards[0]
-            cards_payload = [
-                {"position": c.roman, "name": c.name}
-                for c in spread.cards
-            ]
+            cards_payload = [{"position": c.roman, "name": c.name} for c in spread.cards]
+            caption = f"{shown.roman} {shown.name}"
             image_id = self._images.save_png(render_spread(spread))
             yield sse(
                 "image",
                 {
                     "url": f"/media/spreads/{image_id}.png",
-                    "caption": f"{shown.roman} {shown.name}",
+                    "caption": caption,
                     "cards": cards_payload,
                 },
             )
-            painted = None
-            try:
-                painted = await asyncio.wait_for(generate_scene(spread), timeout=8.0)
-            except Exception:
-                logger.warning("pollinations skipped; keeping local card")
-            if painted:
-                image_id = self._images.save_png(painted)
-                yield sse(
-                    "image",
-                    {
-                        "url": f"/media/spreads/{image_id}.png",
-                        "caption": f"{shown.roman} {shown.name}",
-                        "cards": cards_payload,
-                        "replace": True,
-                    },
-                )
-
+            paint_task = asyncio.create_task(self._paint_scene(spread))
 
         history = [
             ChatMessage(role="system", content=avatar.system_prompt),
@@ -128,18 +113,58 @@ class Orchestrator:
             except Exception as exc:  # noqa: BLE001 — surface as typed SSE
                 await queue.put(("error", LlmError("ollama_unavailable", str(exc))))
 
-        task = asyncio.create_task(pump_llm())
+        async def pump_paint() -> None:
+            if paint_task is None:
+                return
+            painted = await paint_task
+            if painted:
+                await queue.put(("paint", painted))
+
+        llm_task = asyncio.create_task(pump_llm())
+        watchers = [llm_task]
+        if paint_task is not None:
+            watchers.append(asyncio.create_task(pump_paint()))
+
         buffer = ""
+        held = ""
         full = ""
+        llm_ended = False
+        llm_ended_at = 0.0
         try:
             while True:
-                kind, data = await queue.get()
+                grace = 1.2
+                if llm_ended:
+                    waited = asyncio.get_running_loop().time() - llm_ended_at
+                    paint_done = paint_task is None or paint_task.done()
+                    if queue.empty() and (paint_done or waited >= grace):
+                        await asyncio.sleep(0)
+                        if queue.empty():
+                            break
+                timeout = 0.15 if llm_ended else 0.35
+                try:
+                    kind, data = await asyncio.wait_for(queue.get(), timeout=timeout)
+                except asyncio.TimeoutError:
+                    continue
                 if kind == "error":
                     logger.warning("llm error: %s", data)
                     yield sse("error", {"code": data.code, "message": data.message})
                     return
                 if kind == "end":
-                    break
+                    llm_ended = True
+                    llm_ended_at = asyncio.get_running_loop().time()
+                    continue
+                if kind == "paint":
+                    image_id = self._images.save_png(data)
+                    yield sse(
+                        "image",
+                        {
+                            "url": f"/media/spreads/{image_id}.png",
+                            "caption": caption,
+                            "cards": cards_payload,
+                            "replace": True,
+                        },
+                    )
+                    continue
                 token = str(data)
                 if not full:
                     token = token.lstrip()
@@ -151,22 +176,36 @@ class Orchestrator:
                 buffer += token
                 yield sse("token", {"text": token})
                 ready, buffer = split_ready_sentences(buffer)
-                for sentence in ready:
+                speakable, held = take_speakable(held, ready)
+                for sentence in speakable:
                     async for audio_event in self._speak(tts, sentence, avatar.voice):
                         yield audio_event
-            leftover = buffer.strip()
+            leftover_bits = [held, buffer.strip()]
+            leftover = " ".join(part for part in leftover_bits if part).strip()
             if leftover:
                 async for audio_event in self._speak(tts, leftover, avatar.voice):
                     yield audio_event
         finally:
-            if not task.done():
-                task.cancel()
+            for task in watchers:
+                if not task.done():
+                    task.cancel()
+                    with suppress(asyncio.CancelledError):
+                        await task
+            if paint_task and not paint_task.done():
+                paint_task.cancel()
                 with suppress(asyncio.CancelledError):
-                    await task
+                    await paint_task
 
         if full.strip():
             self._conversations.append(conv.id, ChatMessage(role="assistant", content=full))
         yield sse("done", {"conversation_id": conv.id})
+
+    async def _paint_scene(self, spread: Spread) -> bytes | None:
+        try:
+            return await asyncio.wait_for(generate_scene(spread), timeout=8.0)
+        except Exception:
+            logger.warning("pollinations skipped; keeping local card")
+            return None
 
     async def analyze_image(
         self,

@@ -13,10 +13,11 @@ type PromptChip = { label: string; text: string; draw?: boolean };
 type FailedTurn = { text: string; draw: boolean };
 
 const DEMO_AVATARS = ["arcana", "arcano"] as const;
-const CLIP_GAP_MS = 850;
-const SPEECH_GAP_MS = 280;
+const CLIP_GAP_MS = 180;
+const SPEECH_GAP_MS = 60;
 const WIZARD_CLIP = "/media/videos/wizard.mp4?v=land";
 const HEALTH_MS = 45000;
+const THINK_MS = 2300;
 
 type PresenceState = "idle" | "thinking" | "writing" | "speaking";
 type PresenceClip = { src: string; loops: number; id: "wizard" | "avatar" };
@@ -52,6 +53,7 @@ let lastFailed: FailedTurn | null = null;
 let previewObjectUrl: string | null = null;
 let presenceGen = 0;
 let healthTimer = 0;
+let thinkTimer = 0;
 let hasSpread = false;
 
 export async function mountStudio(root: HTMLElement): Promise<void> {
@@ -84,7 +86,7 @@ async function enter(root: HTMLElement): Promise<void> {
   const action = root.querySelector("#enter, #retry") as HTMLButtonElement | null;
   if (action) {
     action.disabled = true;
-    action.textContent = "Abriendo…";
+    action.textContent = "Abriendo la puerta…";
   }
   try {
     const roster = await fetchAvatars();
@@ -111,15 +113,15 @@ function iconVoice(muted: boolean): string {
   const glyph = muted
     ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="m16 9 5 6M21 9l-5 6"/></svg>`
     : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M18.7 6.3a8 8 0 0 1 0 11.4"/></svg>`;
-  return `${glyph}<span>Voz</span>`;
+  return `${glyph}<span class="sr-only">Voz</span>`;
 }
 
 function iconReplay(): string {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span>O\u00edr</span>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span class="sr-only">Oír</span>`;
 }
 
 function iconReset(): string {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg><span>Nueva</span>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg><span class="sr-only">Nueva consulta</span>`;
 }
 
 function orbMarkup(): string {
@@ -128,9 +130,10 @@ function orbMarkup(): string {
 
 function clipsFor(avatar: Avatar): PresenceClip[] {
   const clips: PresenceClip[] = [];
-  if (avatar.id === "arcana") clips.push({ src: WIZARD_CLIP, loops: 1, id: "wizard" });
   if (avatar.video) {
     clips.push({ src: avatar.video, loops: 1, id: "avatar" });
+  } else if (avatar.id === "arcana") {
+    clips.push({ src: WIZARD_CLIP, loops: 1, id: "wizard" });
   }
   return clips;
 }
@@ -156,7 +159,7 @@ function renderStudio(root: HTMLElement): void {
           ${media}
           <div class="presence__cluster">
             ${orbMarkup()}
-            <p class="presence__caption" id="presence-caption">la sala en calma</p>
+            <p class="presence__caption" id="presence-caption" aria-hidden="true">la sala en calma</p>
           </div>
         </div>
       </div>
@@ -175,14 +178,14 @@ function renderStudio(root: HTMLElement): void {
         <div class="console__ornament" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
         <div class="console__head">
           <div>
-            <em class="console__kicker">Salón</em>
+            <em class="console__kicker">Consulta</em>
             <strong>La mesa</strong>
             <span id="feature">${escapeHtml(avatar.feature)}</span>
           </div>
           <div class="console__head-actions">
-            <button class="icon-btn" id="mute" type="button" aria-pressed="${state.muted}" title="Activar o silenciar voz">${iconVoice(state.muted)}</button>
-            <button class="icon-btn" id="replay" type="button" title="Repetir última frase">${iconReplay()}</button>
-            <button class="icon-btn" id="reset" type="button" title="Nueva conversación">${iconReset()}</button>
+            <button class="icon-btn" id="mute" type="button" aria-pressed="${state.muted}" aria-label="${state.muted ? "Activar voz" : "Silenciar voz"}" title="${state.muted ? "Activar voz" : "Silenciar voz"}">${iconVoice(state.muted)}</button>
+            <button class="icon-btn" id="replay" type="button" aria-label="Oír de nuevo" title="Oír de nuevo">${iconReplay()}</button>
+            <button class="icon-btn" id="reset" type="button" aria-label="Nueva consulta" title="Nueva consulta">${iconReset()}</button>
           </div>
         </div>
 
@@ -202,7 +205,7 @@ function renderStudio(root: HTMLElement): void {
 
         <div class="transcript" id="transcript" aria-live="polite"></div>
 
-        <div class="thinking" id="thinking" hidden><span></span><span></span><span></span><em>${escapeHtml(avatar.name)} interpreta…</em></div>
+        <div class="thinking" id="thinking" hidden role="status" aria-live="polite"><span></span><span></span><span></span><em>${escapeHtml(avatar.name)} interpreta…</em></div>
 
         <div class="suggestions" id="suggestions" role="group" aria-label="Sugerencias"></div>
 
@@ -252,6 +255,8 @@ function bindStudio(root: HTMLElement): void {
     const button = event.currentTarget as HTMLButtonElement;
     button.innerHTML = iconVoice(state.muted);
     button.setAttribute("aria-pressed", String(state.muted));
+    button.setAttribute("aria-label", state.muted ? "Activar voz" : "Silenciar voz");
+    button.title = state.muted ? "Activar voz" : "Silenciar voz";
     if (state.muted) stopAudio();
   });
   root.querySelector("#replay")?.addEventListener("click", () => {
@@ -327,11 +332,11 @@ function bindPresence(root: HTMLElement): void {
   const stillActive = () => live() && !root.querySelector(".presence")?.classList.contains("is-orb");
   const afterGap = (fn: () => void) => {
     window.clearTimeout(gapTimer);
-    video.classList.add("is-holding");
+    video.classList.add("is-crossfade");
     gapTimer = window.setTimeout(() => {
-      video.classList.remove("is-holding");
+      video.classList.remove("is-crossfade");
       if (stillActive()) fn();
-    }, CLIP_GAP_MS);
+    }, prefersReducedMotion() ? 0 : CLIP_GAP_MS);
   };
   const startClip = (i: number) => {
     if (i >= clips.length) {
@@ -401,11 +406,8 @@ function revealOrb(root: HTMLElement): void {
   root.querySelector(".arcana")?.classList.add("is-orb");
   const video = presence.querySelector("video") as HTMLVideoElement | null;
   if (!video) return;
-  window.setTimeout(() => {
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
-  }, 950);
+  video.pause();
+  video.classList.add("is-still");
 }
 
 function bindMic(root: HTMLElement): void {
@@ -569,14 +571,20 @@ async function runChat(root: HTMLElement, text: string, draw: boolean): Promise<
   lastFailed = null;
   setBusy(root, true, draw ? "draw" : "chat");
   addBubble(transcript, "user", draw ? `✦ ${text}` : text);
-  const bot = addBubble(transcript, "bot", "");
+  const letter: { node: HTMLElement | null } = { node: null };
   let failed = false;
 
   try {
     await streamChat(text, state.avatar.id, state.conversationId, {
       onMeta: (id) => { state.conversationId = id; },
       onToken: (token) => {
-        bot.textContent = (bot.textContent ?? "") + token;
+        if (!letter.node) {
+          letter.node = addBubble(transcript, "bot", "");
+          const thinking = root.querySelector("#thinking") as HTMLElement | null;
+          if (thinking) thinking.hidden = true;
+        }
+        const node = letter.node;
+        node.textContent = (node.textContent ?? "") + token;
         stickTranscript(transcript);
         if (state.busy && !playing) setPresence("writing");
       },
@@ -593,8 +601,9 @@ async function runChat(root: HTMLElement, text: string, draw: boolean): Promise<
     lastFailed = { text, draw };
     addError(transcript, "No hay conexión con el estudio (127.0.0.1:8000). ¿Sigue FastAPI en marcha?");
   } finally {
-    if (!bot.textContent?.trim()) bot.closest(".bubble")?.remove();
-    else lastSpoken = bot.textContent;
+    const spoken = letter.node;
+    if (spoken && !(spoken.textContent ?? "").trim()) spoken.closest(".bubble")?.remove();
+    else if (spoken?.textContent) lastSpoken = spoken.textContent;
     renderSuggestions(root, failed && lastFailed ? retryChips() : FOLLOWUPS);
     setBusy(root, false);
   }
@@ -645,15 +654,24 @@ function setBusy(root: HTMLElement, busy: boolean, kind: "chat" | "draw" | "visi
   if (input) input.disabled = busy;
   const suggestions = root.querySelector("#suggestions") as HTMLElement | null;
   if (suggestions) suggestions.hidden = busy;
+  window.clearInterval(thinkTimer);
   const line = root.querySelector("#thinking em");
   if (line && busy) {
     const name = state.avatar?.name ?? "Arcana";
-    line.textContent =
+    const lines =
       kind === "draw"
-        ? "La carta cae sobre el paño."
+        ? ["La carta cae sobre el paño.", "Baraja en silencio.", "Mira lo que ha salido."]
         : kind === "vision"
-          ? `${name} mira la imagen.`
-          : `${name} interpreta.`;
+          ? [`${name} mira la imagen.`]
+          : [`${name} interpreta.`, `${name} toma el hilo.`, `${name} busca la frase.`];
+    let index = 0;
+    line.textContent = lines[0];
+    if (lines.length > 1 && !prefersReducedMotion()) {
+      thinkTimer = window.setInterval(() => {
+        index = (index + 1) % lines.length;
+        line.textContent = lines[index];
+      }, THINK_MS);
+    }
   }
   if (busy) {
     revealOrb(root);
@@ -721,6 +739,40 @@ function markSpreadDrawn(root?: HTMLElement): void {
   if (note) note.textContent = "un solo arcano, de nuevo";
 }
 
+function decodeCard(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("card"));
+    img.decoding = "async";
+    img.src = url;
+  });
+}
+
+function paintPlaque(host: HTMLElement, plaque: { roman: string; title: string }): void {
+  const strong = host.querySelector("figcaption strong");
+  let romanEl = host.querySelector(".spread__roman") as HTMLElement | null;
+  if (strong) strong.textContent = plaque.title;
+  if (!plaque.roman) return;
+  if (romanEl) {
+    romanEl.textContent = plaque.roman;
+    return;
+  }
+  romanEl = document.createElement("em");
+  romanEl.className = "spread__roman";
+  romanEl.textContent = plaque.roman;
+  host.querySelector("figcaption")?.prepend(romanEl);
+}
+
+function missingCard(frame: HTMLElement, plaque: { roman: string; title: string }): void {
+  frame.classList.add("is-missing");
+  frame.classList.remove("is-waiting");
+  const fallback = document.createElement("div");
+  fallback.className = "spread__missing";
+  fallback.innerHTML = `${plaque.roman ? `<em>${escapeHtml(plaque.roman)}</em>` : ""}<strong>${escapeHtml(plaque.title)}</strong><span>La l\u00e1mina no lleg\u00f3. La lectura sigue.</span>`;
+  frame.replaceChildren(fallback);
+}
+
 function addSpread(
   transcript: HTMLElement,
   url: string,
@@ -729,38 +781,39 @@ function addSpread(
   replace = false,
 ): void {
   const plaque = plaqueFrom(caption, cards);
-  const label = [plaque.roman, plaque.title].filter(Boolean).join(" ");
+  const label = [plaque.roman, plaque.title].filter(Boolean).join(" ") || "Carta de tarot";
   markSpreadDrawn(transcript.closest(".arcana") ? (transcript.closest(".arcana") as HTMLElement) : undefined);
+  const pin = () => stickTranscript(transcript);
+
   if (replace) {
     const existing = transcript.querySelector("figure.spread:last-of-type") as HTMLElement | null;
     const img = existing?.querySelector("img");
-    if (existing && img) {
-      img.src = url;
-      img.alt = label || "Carta de tarot";
-      const strong = existing.querySelector("figcaption strong");
-      const romanEl = existing.querySelector(".spread__roman");
-      if (strong) strong.textContent = plaque.title;
-      if (romanEl && plaque.roman) romanEl.textContent = plaque.roman;
-      else if (!romanEl && plaque.roman) {
-        const em = document.createElement("em");
-        em.className = "spread__roman";
-        em.textContent = plaque.roman;
-        existing.querySelector("figcaption")?.prepend(em);
-      }
+    const frame = existing?.querySelector(".spread__frame") as HTMLElement | null;
+    if (existing && img && frame) {
+      paintPlaque(existing, plaque);
+      existing.classList.add("is-replacing");
+      void decodeCard(url).then((decoded) => {
+        decoded.alt = label;
+        img.replaceWith(decoded);
+        existing.classList.remove("is-replacing");
+        frame.classList.remove("is-waiting", "is-missing");
+        pin();
+      }).catch(() => {
+        existing.classList.remove("is-replacing");
+      });
       return;
     }
   }
+
   const wrap = document.createElement("figure");
   wrap.className = "spread";
   if (!prefersReducedMotion()) wrap.classList.add("is-deal");
   const stage = document.createElement("div");
   stage.className = "spread__stage";
   const frame = document.createElement("div");
-  frame.className = "spread__frame";
+  frame.className = "spread__frame is-waiting";
   const img = document.createElement("img");
-  img.src = url;
-  img.alt = label || "Carta de tarot";
-  img.loading = "lazy";
+  img.alt = label;
   frame.append(img);
   stage.append(frame);
   wrap.append(stage);
@@ -770,15 +823,12 @@ function addSpread(
   fig.innerHTML = `${roman}<strong>${escapeHtml(plaque.title)}</strong>`;
   wrap.append(fig);
   transcript.append(wrap);
-  const pin = () => stickTranscript(transcript);
-  img.addEventListener("load", pin);
-  img.addEventListener("error", () => {
-    frame.classList.add("is-missing");
-    const fallback = document.createElement("p");
-    fallback.className = "spread__fallback";
-    fallback.textContent = "La visi\u00f3n no lleg\u00f3. El nombre de la carta est\u00e1 abajo; la lectura sigue.";
-    img.replaceWith(fallback);
-  });
+  void decodeCard(url).then((decoded) => {
+    decoded.alt = label;
+    img.replaceWith(decoded);
+    frame.classList.remove("is-waiting");
+    pin();
+  }).catch(() => missingCard(frame, plaque));
   pin();
 }
 
@@ -938,7 +988,7 @@ function escapeHtml(value: string): string {
 }
 
 function gateHtml(): string {
-  return `<div class="gate" role="dialog" aria-labelledby="gate-title" aria-describedby="gate-lede">
+  return `<div class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" aria-describedby="gate-lede">
     <video class="gate__video" autoplay muted loop playsinline poster="/media/image/arcana.jpg?v=land" src="/media/videos/portada.mp4" aria-hidden="true"></video>
     <div class="gate__veil"></div>
     <div class="gate__dust" aria-hidden="true"></div>
@@ -949,13 +999,13 @@ function gateHtml(): string {
       <span class="gate__corner gate__corner--br"></span>
     </div>
     <div class="gate__copy">
-      <p class="gate__kicker">Salón privado</p>
-      <p class="gate__house">Casa Aigoritmo</p>
+      <p class="gate__kicker">La consulta</p>
+      <p class="gate__house">A solas, en esta máquina</p>
       <h1 id="gate-title">Arcana</h1>
       <div class="gate__rule" aria-hidden="true"></div>
-      <p class="gate__lede" id="gate-lede">Cierra la puerta. Una carta. Una voz. Nada de esto sale de la habitación.</p>
-      <button class="enter" id="enter" type="button">Entrar</button>
-      <small class="gate__note">Nada sale de tu máquina · 127.0.0.1</small>
+      <p class="gate__lede" id="gate-lede">Siéntate. Una carta. Te escucho. Nada de esto sale de la habitación.</p>
+      <button class="enter" id="enter" type="button">Siéntate</button>
+      <small class="gate__note">Aquí · 127.0.0.1 · no sale a la red</small>
     </div>
   </div>`;
 }

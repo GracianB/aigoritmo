@@ -23,3 +23,31 @@ def split_ready_sentences(buffer: str) -> tuple[list[str], str]:
         if piece:
             ready.append(piece)
     return ready, buffer
+
+
+def take_speakable(
+    held: str,
+    incoming: list[str],
+    *,
+    min_chars: int = 90,
+    max_chars: int = 220,
+) -> tuple[list[str], str]:
+    """Hold short clauses so Piper is not a burst of four-word clips."""
+    speakable: list[str] = []
+    current = held.strip()
+    for piece in incoming:
+        piece = piece.strip()
+        if not piece:
+            continue
+        trial = f"{current} {piece}".strip() if current else piece
+        if current and len(trial) > max_chars:
+            speakable.append(current)
+            current = piece
+        else:
+            current = trial
+        if not current:
+            continue
+        if len(current) >= min_chars or current.endswith("?"):
+            speakable.append(current)
+            current = ""
+    return speakable, current

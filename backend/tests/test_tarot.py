@@ -32,3 +32,10 @@ def test_render_png_header():
     png = render_spread(spread)
     assert png[:8] == b"\x89PNG\r\n\x1a\n"
     assert len(png) > 1000
+
+
+def test_death_card_keeps_its_name():
+    from app.services.tarot import MAJOR_ARCANA
+
+    death = next(card for card in MAJOR_ARCANA if card[0] == "XIII")
+    assert death[1] == "La Muerte"
