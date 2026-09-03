@@ -794,12 +794,37 @@ function addSpread(
       existing.classList.add("is-replacing");
       void decodeCard(url).then((decoded) => {
         decoded.alt = label;
-        img.replaceWith(decoded);
-        existing.classList.remove("is-replacing");
-        frame.classList.remove("is-waiting", "is-missing");
-        pin();
+        const hadArt = Boolean(img.currentSrc || img.getAttribute("src"));
+        if (!hadArt || prefersReducedMotion()) {
+          img.replaceWith(decoded);
+          existing.classList.remove("is-replacing");
+          frame.classList.remove("is-waiting", "is-missing");
+          pin();
+          return;
+        }
+        decoded.classList.add("is-incoming");
+        frame.append(decoded);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            decoded.classList.add("is-in");
+            img.classList.add("is-out");
+          });
+        });
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          img.remove();
+          decoded.classList.remove("is-incoming", "is-in");
+          existing.classList.remove("is-replacing");
+          frame.classList.remove("is-waiting", "is-missing");
+          pin();
+        };
+        decoded.addEventListener("transitionend", finish, { once: true });
+        window.setTimeout(finish, 520);
       }).catch(() => {
         existing.classList.remove("is-replacing");
+        if (frame.classList.contains("is-waiting")) missingCard(frame, plaque);
       });
       return;
     }
