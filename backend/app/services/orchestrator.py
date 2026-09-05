@@ -128,6 +128,7 @@ class Orchestrator:
         buffer = ""
         held = ""
         full = ""
+        speech_started = False
         llm_ended = False
         llm_ended_at = 0.0
         try:
@@ -176,8 +177,10 @@ class Orchestrator:
                 buffer += token
                 yield sse("token", {"text": token})
                 ready, buffer = split_ready_sentences(buffer)
-                speakable, held = take_speakable(held, ready)
+                min_chars = 1 if not speech_started else 40
+                speakable, held = take_speakable(held, ready, min_chars=min_chars)
                 for sentence in speakable:
+                    speech_started = True
                     async for audio_event in self._speak(tts, sentence, avatar.voice):
                         yield audio_event
             leftover_bits = [held, buffer.strip()]

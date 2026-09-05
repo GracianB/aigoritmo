@@ -53,3 +53,16 @@ def test_splits_when_max_chars_exceeded():
     speakable, held = take_speakable("", [long_a, long_b])
     assert long_a in speakable
     assert held == long_b or long_b in speakable
+
+def test_first_clip_flushes_short_sentence():
+    speakable, held = take_speakable("", ["El Loco."], min_chars=1)
+    assert speakable == ["El Loco."]
+    assert held == ""
+
+
+def test_later_clips_hold_below_min_chars():
+    first, held = take_speakable("", ["El Loco."], min_chars=1)
+    assert first == ["El Loco."]
+    speakable, held = take_speakable("", ["Di lo que se ve."], min_chars=40)
+    assert speakable == []
+    assert held == "Di lo que se ve."

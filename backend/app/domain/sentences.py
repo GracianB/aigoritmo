@@ -29,10 +29,15 @@ def take_speakable(
     held: str,
     incoming: list[str],
     *,
-    min_chars: int = 72,
+    min_chars: int = 40,
     max_chars: int = 220,
 ) -> tuple[list[str], str]:
-    """Hold short clauses so Piper is not a burst of four-word clips."""
+    """Hold short clauses so Piper is not a burst of four-word clips.
+
+    Callers should pass a low ``min_chars`` (e.g. 1) for the first clip so the
+    opening sentence speaks immediately, then raise it (default 40) afterward.
+    Questions still flush early regardless of length.
+    """
     speakable: list[str] = []
     current = held.strip()
     for piece in incoming:
