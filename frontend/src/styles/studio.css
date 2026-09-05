@@ -1002,7 +1002,7 @@
   padding: .2rem 0 .1rem;
 }
 .suggestions[hidden] { display: none; }
-.suggestions button {
+.suggestions button:not(.chip) {
   appearance: none;
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--gold) 28%, transparent);
@@ -1016,7 +1016,7 @@
   text-transform: uppercase;
   cursor: pointer;
 }
-.suggestions button:hover {
+.suggestions button:not(.chip):hover {
   color: var(--gold-lit);
   border-bottom-color: var(--gold);
 }
@@ -1532,4 +1532,232 @@
     opacity: .22;
   }
   .gate__dust { display: none; }
+}
+
+
+/* --- Deepen salon: gate leave, letter stream, theme contrast, quieter chrome --- */
+
+.gate.is-leaving {
+  opacity: 0;
+  filter: blur(6px) brightness(.7);
+  transform: scale(1.02);
+  transition: opacity .32s var(--ease), filter .32s ease, transform .32s var(--ease);
+}
+.gate.is-leaving .gate__copy {
+  transform: translateY(10px);
+  opacity: 0;
+  transition: opacity .28s ease, transform .28s var(--ease);
+}
+
+.gate__also {
+  margin: .35rem 0 0;
+  color: #8a8378;
+  font-family: var(--inscription);
+  font-size: .52rem;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+}
+
+.gate__note {
+  letter-spacing: .16em;
+  opacity: .85;
+}
+
+.arcana__header {
+  background: linear-gradient(180deg, rgba(7, 6, 10, .42), transparent 88%);
+  padding-bottom: 1.2rem;
+}
+.brand__house {
+  opacity: .78;
+}
+.status__phrase {
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar-switch {
+  padding: 1px;
+  border: 1px solid color-mix(in srgb, var(--gold) 18%, transparent);
+  background: rgba(7, 6, 10, .35);
+  border-radius: 2px;
+}
+.avatar-switch button {
+  border: 0;
+  background: transparent;
+  margin-left: 0;
+}
+.avatar-switch button:first-child,
+.avatar-switch button:last-child { border-radius: 1px; margin-left: 0; }
+.avatar-switch button.is-active {
+  background: color-mix(in srgb, var(--gold) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 35%, transparent);
+}
+
+.console {
+  border-color: color-mix(in srgb, var(--gold) 18%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), rgba(8, 7, 12, .97));
+}
+.arcana[data-avatar="arcano"] .console {
+  border-color: color-mix(in srgb, var(--steel) 26%, transparent);
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, .58),
+    inset 0 1px 0 rgba(180, 206, 224, .08);
+}
+.arcana[data-avatar="arcana"] .console {
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, .58),
+    inset 0 1px 0 rgba(239, 212, 163, .1),
+    0 0 40px rgba(122, 36, 51, .08);
+}
+
+.console__head strong {
+  font-size: 1.28rem;
+}
+
+.thinking {
+  opacity: 1;
+  transition: opacity .22s ease;
+}
+.thinking.is-leaving {
+  opacity: 0;
+}
+
+.chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--gold) 28%, transparent);
+  border-radius: 0;
+  background: transparent;
+  color: #d8d0c0;
+  padding: .28rem .15rem .22rem;
+  font-family: var(--inscription);
+  font-size: .58rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.chip i {
+  font-style: normal;
+  color: var(--gold);
+  font-size: .7rem;
+  opacity: .9;
+}
+.chip--draw {
+  border-bottom-color: color-mix(in srgb, var(--gold) 48%, transparent);
+  color: var(--gold-lit);
+}
+.chip--soft { color: #cfc6b8; }
+.chip:hover {
+  color: var(--gold-lit);
+  border-bottom-color: var(--gold);
+}
+.suggestions button.chip { /* override older bare button rules */ }
+
+.bubble--bot.is-streaming .bubble__content::after {
+  content: "\2502";
+  display: inline-block;
+  width: .55ch;
+  margin-left: .12em;
+  color: var(--gold);
+  animation: stream-caret 1s steps(1) infinite;
+}
+@keyframes stream-caret {
+  0%, 45% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.bubble--error {
+  border-left: 2px solid rgba(212, 138, 148, .55);
+  background: rgba(42, 16, 24, .42);
+}
+.arcana[data-avatar="arcano"] .bubble--error {
+  border-left-color: color-mix(in srgb, var(--steel) 55%, transparent);
+  border-color: color-mix(in srgb, var(--steel) 28%, transparent);
+  background: rgba(16, 24, 34, .5);
+  color: #d5e0ea;
+}
+.arcana[data-avatar="arcano"] .bubble--error .bubble__content { color: #d9e4ee; }
+.arcana[data-avatar="arcano"] .bubble__retry {
+  border-color: color-mix(in srgb, var(--steel) 40%, transparent);
+  color: #e4eef6;
+}
+
+.studio-alert {
+  font-family: var(--font);
+  letter-spacing: .01em;
+}
+.studio-alert strong {
+  font-family: var(--inscription);
+  font-size: .62rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.presence__video.is-holding {
+  opacity: .55;
+  filter: saturate(.62) brightness(.55) contrast(1.05);
+  transition: opacity var(--dur) ease, filter var(--dur) ease;
+}
+
+.arcana[data-avatar="arcano"] .spread__stage {
+  background:
+    linear-gradient(145deg, #c5d4e2 0%, #8aa3b8 38%, #445868 72%, #a8bdd0 100%);
+  box-shadow:
+    0 22px 40px rgba(0, 0, 0, .55),
+    0 2px 0 rgba(190, 214, 230, .16),
+    inset 0 0 0 1px rgba(12, 20, 28, .5);
+}
+.arcana[data-avatar="arcana"] .spread__stage {
+  background:
+    linear-gradient(145deg, #ead3a2 0%, #c4a066 38%, #7a4e2c 72%, #d0a86a 100%);
+}
+
+.arcana[data-avatar="arcano"] .presence[data-state="thinking"] {
+  box-shadow: inset 0 0 100px rgba(60, 90, 120, .28);
+}
+.arcana[data-avatar="arcana"] .presence[data-state="thinking"] {
+  box-shadow: inset 0 0 100px rgba(122, 36, 51, .3);
+}
+.arcana[data-avatar="arcano"] .presence[data-state="speaking"] {
+  box-shadow: inset 0 0 90px rgba(140, 176, 206, .22);
+}
+.arcana[data-avatar="arcana"] .presence[data-state="speaking"] {
+  box-shadow: inset 0 0 90px rgba(214, 181, 122, .2);
+}
+
+.arcana[data-avatar="arcano"] .ritual-btn--hero {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--steel) 20%, transparent), color-mix(in srgb, var(--steel) 8%, transparent));
+  border-color: color-mix(in srgb, var(--steel) 42%, transparent);
+}
+.arcana[data-avatar="arcano"] .ritual-btn--hero b { color: var(--gold-lit); }
+.arcana[data-avatar="arcano"] .send {
+  background: linear-gradient(180deg, var(--gold-lit), var(--gold-2));
+  color: #0c1218;
+}
+
+.arcana[data-avatar="arcano"] .orb__plasma {
+  filter: blur(9px) saturate(.95) hue-rotate(12deg);
+}
+
+.disclaimer {
+  opacity: .78;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate.is-leaving,
+  .gate.is-leaving .gate__copy,
+  .thinking,
+  .bubble--bot.is-streaming .bubble__content::after {
+    transition: none;
+    animation: none;
+  }
+  .gate.is-leaving { opacity: 0; filter: none; transform: none; }
 }

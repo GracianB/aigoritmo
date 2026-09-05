@@ -14,23 +14,25 @@ type FailedTurn = { text: string; draw: boolean };
 
 const DEMO_AVATARS = ["arcana", "arcano"] as const;
 const CLIP_GAP_MS = 180;
-const SPEECH_GAP_MS = 60;
+const SPEECH_GAP_MS = 90;
 const WIZARD_CLIP = "/media/videos/wizard.mp4?v=land";
 const HEALTH_MS = 45000;
-const THINK_MS = 2300;
+const THINK_MS = 2600;
+const WELCOME_DELAY_MS = 420;
+const THINK_FADE_MS = 220;
 
 type PresenceState = "idle" | "thinking" | "writing" | "speaking";
 type PresenceClip = { src: string; loops: number; id: "wizard" | "avatar" };
 
 const STARTERS: PromptChip[] = [
-  { label: "Lanza la tirada", text: "Sí, lanza una tirada de una carta sobre lo que más me inquieta ahora.", draw: true },
+  { label: "Una carta", text: "Sí, lanza una tirada de una carta sobre lo que más me inquieta ahora.", draw: true },
   { label: "Amor", text: "Quiero una lectura de una carta sobre el amor y lo que se mueve en mis vínculos.", draw: true },
   { label: "Trabajo", text: "Tira una carta sobre mi camino laboral ahora mismo.", draw: true },
   { label: "Este mes", text: "¿Qué energía me acompaña este mes? Una carta basta.", draw: true },
 ];
 
 const FOLLOWUPS: PromptChip[] = [
-  { label: "Profundiza", text: "Profundiza en esta carta y dime qué me pide hoy." },
+  { label: "Más hondo", text: "Profundiza en esta carta y dime qué me pide hoy." },
   { label: "Consejo", text: "Dame un consejo concreto y practicable, sin misticismo vacío." },
   { label: "Sombra", text: "¿Qué me está frenando o qué no quiero ver?" },
   { label: "Otra tirada", text: "Haz otra tirada de una carta sobre este mismo tema.", draw: true },
@@ -86,7 +88,12 @@ async function enter(root: HTMLElement): Promise<void> {
   const action = root.querySelector("#enter, #retry") as HTMLButtonElement | null;
   if (action) {
     action.disabled = true;
-    action.textContent = "Abriendo la puerta…";
+    action.textContent = "La puerta cede…";
+  }
+  const gate = root.querySelector(".gate");
+  if (gate && !prefersReducedMotion()) {
+    gate.classList.add("is-leaving");
+    await new Promise((resolve) => window.setTimeout(resolve, 320));
   }
   try {
     const roster = await fetchAvatars();
@@ -159,18 +166,18 @@ function renderStudio(root: HTMLElement): void {
           ${media}
           <div class="presence__cluster">
             ${orbMarkup()}
-            <p class="presence__caption" id="presence-caption" aria-hidden="true">la sala en calma</p>
+            <p class="presence__caption" id="presence-caption" aria-hidden="true">${avatar.id === "arcano" ? "la sala en sombra" : "la sala en calma"}</p>
           </div>
         </div>
       </div>
 
       <header class="arcana__header">
-        <div class="brand">${sigilMarkup()}<span class="brand__house">Aigoritmo</span><span class="brand__name">${escapeHtml(avatar.name)}</span></div>
+        <div class="brand">${sigilMarkup()}<span class="brand__house">Consulta privada</span><span class="brand__name">${escapeHtml(avatar.name)}</span></div>
         <div class="status">
-          <div class="avatar-switch" id="avatar-switch" role="tablist" aria-label="Elegir presencia">
-            ${state.roster.map((item) => `<button type="button" role="tab" data-avatar="${item.id}" aria-selected="${item.id === avatar.id}" class="${item.id === avatar.id ? "is-active" : ""}">${escapeHtml(item.name)}</button>`).join("")}
+          <div class="avatar-switch" id="avatar-switch" role="tablist" aria-label="Quién te recibe">
+            ${state.roster.map((item) => `<button type="button" role="tab" data-avatar="${item.id}" aria-selected="${item.id === avatar.id}" class="${item.id === avatar.id ? "is-active" : ""}" title="${item.id === "arcano" ? "Presencia grave" : "Presencia cálida"}">${escapeHtml(item.name)}</button>`).join("")}
           </div>
-          <span class="status__dot" aria-hidden="true"></span><span id="voice-status">la sala en calma</span>
+          <span class="status__dot" aria-hidden="true"></span><span id="voice-status" class="status__phrase">la sala en calma</span>
         </div>
       </header>
 
@@ -178,8 +185,8 @@ function renderStudio(root: HTMLElement): void {
         <div class="console__ornament" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
         <div class="console__head">
           <div>
-            <em class="console__kicker">Consulta</em>
-            <strong>La mesa</strong>
+            <em class="console__kicker">Mesa</em>
+            <strong>La carta habla aquí</strong>
             <span id="feature">${escapeHtml(avatar.feature)}</span>
           </div>
           <div class="console__head-actions">
@@ -205,7 +212,7 @@ function renderStudio(root: HTMLElement): void {
 
         <div class="transcript" id="transcript" aria-live="polite"></div>
 
-        <div class="thinking" id="thinking" hidden role="status" aria-live="polite"><span></span><span></span><span></span><em>${escapeHtml(avatar.name)} interpreta…</em></div>
+        <div class="thinking" id="thinking" hidden role="status" aria-live="polite"><span></span><span></span><span></span><em>${escapeHtml(avatar.name)} escucha.</em></div>
 
         <div class="suggestions" id="suggestions" role="group" aria-label="Sugerencias"></div>
 
@@ -219,7 +226,7 @@ function renderStudio(root: HTMLElement): void {
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.6 21 12 3.4 3.4l.1 6.7L15 12 3.5 13.9z"/></svg>
           </button>
         </form>
-        <p class="disclaimer">El tarot es simbólico, no un dictamen. ${escapeHtml(avatar.name)} tira una sola carta: no hace falta subir nada.</p>
+        <p class="disclaimer">Simbólico, no un dictamen. ${escapeHtml(avatar.name)} tira una sola carta.</p>
       </section>
     </main>
   `;
@@ -396,18 +403,28 @@ function frameVideo(video: HTMLVideoElement, clipId: string, avatarId: string): 
 function maybeWelcome(): void {
   if (!welcomePending || !state.avatar) return;
   welcomePending = false;
-  void speakLine(state.avatar.welcome);
+  const line = state.avatar.welcome;
+  const delay = prefersReducedMotion() ? 0 : WELCOME_DELAY_MS;
+  window.setTimeout(() => {
+    if (state.avatar && state.avatar.welcome === line) void speakLine(line);
+  }, delay);
 }
 
 function revealOrb(root: HTMLElement): void {
   const presence = root.querySelector(".presence");
-  if (!presence || presence.classList.contains("is-orb")) return;
+  if (!presence) return;
+  const video = presence.querySelector("video") as HTMLVideoElement | null;
+  if (video && !video.paused) {
+    video.pause();
+    video.classList.add("is-holding");
+  }
+  if (presence.classList.contains("is-orb")) return;
   presence.classList.add("is-orb");
   root.querySelector(".arcana")?.classList.add("is-orb");
-  const video = presence.querySelector("video") as HTMLVideoElement | null;
   if (!video) return;
   video.pause();
   video.classList.add("is-still");
+  video.classList.remove("is-holding");
 }
 
 function bindMic(root: HTMLElement): void {
@@ -474,7 +491,11 @@ function renderSuggestions(root: HTMLElement, chips: PromptChip[]): void {
   const usable = chips.filter((chip) => chip.text.trim());
   wrap.hidden = usable.length === 0;
   wrap.innerHTML = usable
-    .map((chip) => `<button type="button" data-prompt="${escapeHtml(chip.text)}" data-draw="${chip.draw ? "1" : "0"}">${escapeHtml(chip.label)}</button>`)
+    .map((chip) => {
+      const kind = chip.draw ? "chip chip--draw" : "chip chip--soft";
+      const mark = chip.draw ? `<i aria-hidden="true">✦</i>` : "";
+      return `<button type="button" class="${kind}" data-prompt="${escapeHtml(chip.text)}" data-draw="${chip.draw ? "1" : "0"}">${mark}<span>${escapeHtml(chip.label)}</span></button>`;
+    })
     .join("");
 }
 
@@ -578,10 +599,11 @@ async function runChat(root: HTMLElement, text: string, draw: boolean): Promise<
     await streamChat(text, state.avatar.id, state.conversationId, {
       onMeta: (id) => { state.conversationId = id; },
       onToken: (token) => {
+        if (!token) return;
         if (!letter.node) {
           letter.node = addBubble(transcript, "bot", "");
-          const thinking = root.querySelector("#thinking") as HTMLElement | null;
-          if (thinking) thinking.hidden = true;
+          letter.node.closest(".bubble")?.classList.add("is-streaming");
+          hideThinking(root);
         }
         const node = letter.node;
         node.textContent = (node.textContent ?? "") + token;
@@ -599,9 +621,10 @@ async function runChat(root: HTMLElement, text: string, draw: boolean): Promise<
   } catch {
     failed = true;
     lastFailed = { text, draw };
-    addError(transcript, "No hay conexión con el estudio (127.0.0.1:8000). ¿Sigue FastAPI en marcha?");
+    addError(transcript, "No hay conexión con el salón. ¿Sigue FastAPI en marcha?");
   } finally {
     const spoken = letter.node;
+    spoken?.closest(".bubble")?.classList.remove("is-streaming");
     if (spoken && !(spoken.textContent ?? "").trim()) spoken.closest(".bubble")?.remove();
     else if (spoken?.textContent) lastSpoken = spoken.textContent;
     renderSuggestions(root, failed && lastFailed ? retryChips() : FOLLOWUPS);
@@ -643,7 +666,6 @@ function setBusy(root: HTMLElement, busy: boolean, kind: "chat" | "draw" | "visi
   const vision = root.querySelector("#vision") as HTMLButtonElement | null;
   if (vision) vision.disabled = busy;
   (root.querySelector("#mic") as HTMLButtonElement).disabled = busy;
-  (root.querySelector("#thinking") as HTMLElement).hidden = !busy;
   root.querySelector(".console")?.setAttribute("aria-busy", String(busy));
   root.querySelectorAll("#avatar-switch button").forEach((btn) => {
     (btn as HTMLButtonElement).disabled = busy;
@@ -655,15 +677,29 @@ function setBusy(root: HTMLElement, busy: boolean, kind: "chat" | "draw" | "visi
   const suggestions = root.querySelector("#suggestions") as HTMLElement | null;
   if (suggestions) suggestions.hidden = busy;
   window.clearInterval(thinkTimer);
+  const thinking = root.querySelector("#thinking") as HTMLElement | null;
+  if (thinking) {
+    if (busy) {
+      thinking.classList.remove("is-leaving");
+      thinking.hidden = false;
+    } else {
+      hideThinking(root, true);
+    }
+  }
   const line = root.querySelector("#thinking em");
   if (line && busy) {
     const name = state.avatar?.name ?? "Arcana";
+    const grave = state.avatar?.id === "arcano";
     const lines =
       kind === "draw"
-        ? ["La carta cae sobre el paño.", "Baraja en silencio.", "Mira lo que ha salido."]
+        ? grave
+          ? ["Una carta. Nada más.", "El paño espera.", "Mira lo que ha caído."]
+          : ["La carta cae sobre el paño.", "Baraja en silencio.", "Mira lo que ha salido."]
         : kind === "vision"
           ? [`${name} mira la imagen.`]
-          : [`${name} interpreta.`, `${name} toma el hilo.`, `${name} busca la frase.`];
+          : grave
+            ? [`${name} escucha.`, `${name} toma el hilo.`, `${name} elige la frase.`]
+            : [`${name} interpreta.`, `${name} toma el hilo.`, `${name} busca la frase.`];
     let index = 0;
     line.textContent = lines[0];
     if (lines.length > 1 && !prefersReducedMotion()) {
@@ -682,13 +718,30 @@ function setBusy(root: HTMLElement, busy: boolean, kind: "chat" | "draw" | "visi
   if (!busy) (root.querySelector("#input") as HTMLTextAreaElement).focus();
 }
 
+function hideThinking(root: HTMLElement, instant = false): void {
+  const thinking = root.querySelector("#thinking") as HTMLElement | null;
+  if (!thinking || thinking.hidden) return;
+  window.clearInterval(thinkTimer);
+  if (instant || prefersReducedMotion()) {
+    thinking.hidden = true;
+    thinking.classList.remove("is-leaving");
+    return;
+  }
+  thinking.classList.add("is-leaving");
+  window.setTimeout(() => {
+    if (!thinking.classList.contains("is-leaving")) return;
+    thinking.hidden = true;
+    thinking.classList.remove("is-leaving");
+  }, THINK_FADE_MS);
+}
+
 function addBubble(transcript: HTMLElement, role: "user" | "bot" | "error", text: string): HTMLElement {
   const el = document.createElement("article");
   el.className = `bubble bubble--${role}`;
   if (role === "bot") el.classList.add("is-letter");
   const label = document.createElement("span");
   label.className = "bubble__label";
-  label.textContent = role === "bot" ? (state.avatar?.name.toUpperCase() ?? "AVATAR") : role === "user" ? "TÚ" : "SISTEMA";
+  label.textContent = role === "bot" ? (state.avatar?.name.toUpperCase() ?? "AVATAR") : role === "user" ? "TÚ" : "AVISO";
   const content = document.createElement("div");
   content.className = "bubble__content";
   content.textContent = text;
@@ -904,21 +957,21 @@ async function checkHealth(root: HTMLElement): Promise<void> {
     if (!health.ollama || !health.ollama_chat_ready) {
       host.hidden = false;
       host.className = "studio-alert";
-      host.innerHTML = "<strong>El intérprete local no responde.</strong> Arráncalo con scripts/start-ollama.ps1. Hasta entonces no podrá leer.";
+      host.innerHTML = "<strong>El intérprete calla.</strong> En esta máquina: scripts/start-ollama.ps1. Sin él, la lectura no arranca.";
       return;
     }
     if (!health.piper_executable) {
       host.hidden = false;
       host.className = "studio-alert is-soft";
-      host.innerHTML = "<strong>La voz no está lista.</strong> Puedes leer la consulta; el audio llegará cuando la voz local esté disponible.";
+      host.innerHTML = "<strong>Sin voz, por ahora.</strong> Puedes leer; el audio volverá cuando Piper esté disponible.";
       return;
     }
     host.hidden = true;
     host.replaceChildren();
   } catch {
     host.hidden = false;
-    host.className = "studio-alert";
-    host.innerHTML = "<strong>No pude leer el estado del estudio.</strong> Recarga con Ctrl+F5 si el chat se queda mudo.";
+    host.className = "studio-alert is-soft";
+    host.innerHTML = "<strong>No oigo el estudio.</strong> Si la mesa se queda muda, recarga con Ctrl+F5.";
   }
 }
 
@@ -973,12 +1026,20 @@ function setSpeaking(on: boolean): void {
 }
 
 function setPresence(mode: PresenceState): void {
-  const labels: Record<PresenceState, string> = {
-    idle: "la sala en calma",
-    thinking: "baraja en silencio",
-    writing: "escribe la lectura",
-    speaking: "te habla",
-  };
+  const grave = state.avatar?.id === "arcano";
+  const labels: Record<PresenceState, string> = grave
+    ? {
+        idle: "la sala en sombra",
+        thinking: "una carta basta",
+        writing: "escribe sin adorno",
+        speaking: "te habla bajo",
+      }
+    : {
+        idle: "la sala en calma",
+        thinking: "baraja en silencio",
+        writing: "escribe la lectura",
+        speaking: "te habla",
+      };
   document.querySelectorAll(".presence, .arcana").forEach((el) => {
     (el as HTMLElement).dataset.state = mode;
   });
@@ -990,10 +1051,10 @@ function setPresence(mode: PresenceState): void {
 
 function explain(code: string, message: string): string {
   if (code === "backend_unavailable" || code === "http_error") {
-    return "El estudio no responde. Comprueba que FastAPI sigue en 127.0.0.1:8000.";
+    return "El salón no responde. ¿Sigue FastAPI en marcha en esta máquina?";
   }
   if (code === "ollama_unavailable") {
-    return "El intérprete local no responde. Arráncalo en esta máquina (scripts/start-ollama.ps1).";
+    return "El intérprete calla. Arráncalo en esta máquina (scripts/start-ollama.ps1).";
   }
   if (code === "ollama_vision_unavailable") {
     return "La mirada a fotos no está lista ahora. Puedes seguir con la tirada sin subir nada.";
@@ -1024,13 +1085,14 @@ function gateHtml(): string {
       <span class="gate__corner gate__corner--br"></span>
     </div>
     <div class="gate__copy">
-      <p class="gate__kicker">La consulta</p>
-      <p class="gate__house">A solas, en esta máquina</p>
+      <p class="gate__kicker">Salón privado</p>
+      <p class="gate__house">A solas · en esta máquina</p>
       <h1 id="gate-title">Arcana</h1>
+      <p class="gate__also" aria-hidden="true">también Arcano</p>
       <div class="gate__rule" aria-hidden="true"></div>
       <p class="gate__lede" id="gate-lede">Siéntate. Una carta. Te escucho. Nada de esto sale de la habitación.</p>
       <button class="enter" id="enter" type="button">Siéntate</button>
-      <small class="gate__note">Aquí · 127.0.0.1 · no sale a la red</small>
+      <small class="gate__note">Local · no sale a la red</small>
     </div>
   </div>`;
 }
@@ -1038,10 +1100,10 @@ function gateHtml(): string {
 function errorGate(kind: string): string {
   const copy =
     kind === "avatar"
-      ? { kicker: "Catálogo", lede: "Arcana no está en el catálogo de avatares. Revisa la carpeta avatars/." }
+      ? { kicker: "Ausente", lede: "Arcana no está en el catálogo. Revisa la carpeta avatars/ en esta máquina." }
       : {
-          kicker: "Sin conexión",
-          lede: "No puedo abrir el estudio. Comprueba que FastAPI está en 127.0.0.1:8000 y recarga.",
+          kicker: "La puerta no cede",
+          lede: "El salón no responde. Comprueba que FastAPI está en marcha y vuelve a llamar.",
         };
   return `<div class="gate gate--error">
     <div class="gate__copy">
@@ -1050,8 +1112,8 @@ function errorGate(kind: string): string {
       <h1>Arcana</h1>
       <div class="gate__rule" aria-hidden="true"></div>
       <p class="gate__lede">${copy.lede}</p>
-      <button class="enter" id="retry" type="button">Reintentar</button>
-      <small class="gate__note">Salud: 127.0.0.1:8000/health · Ollama: scripts/start-ollama.ps1</small>
+      <button class="enter" id="retry" type="button">Llamar de nuevo</button>
+      <small class="gate__note">Salud local · Ollama: scripts/start-ollama.ps1</small>
     </div>
   </div>`;
 }

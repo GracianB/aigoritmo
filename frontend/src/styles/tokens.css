@@ -41,7 +41,8 @@
   --speak: #e8c890;
   --accent: var(--gold);
   --accent-2: var(--garnet-lit);
-  --wash: rgba(122, 36, 51, 0.22);
+  --wash: rgba(122, 36, 51, 0.28);
+  --panel: #120d14;
 }
 
 .arcana[data-avatar="arcano"] {
@@ -51,15 +52,17 @@
   --gold-deep: #3d5164;
   --garnet: #2c445c;
   --garnet-lit: #5b7a98;
-  --line: rgba(158, 180, 200, 0.18);
-  --idle: #7e96ac;
-  --think: #5b7a98;
-  --write: #c5d6e6;
-  --speak: #b7cce0;
+  --line: rgba(158, 180, 200, 0.2);
+  --idle: #8aa3b8;
+  --think: #6d8aa6;
+  --write: #d0e0ec;
+  --speak: #c2d6e8;
   --accent: var(--steel);
   --accent-2: #4d6a86;
-  --wash: rgba(26, 38, 51, 0.38);
+  --wash: rgba(18, 30, 42, 0.48);
+  --panel: #0b1016;
   --focus: 0 0 0 2px #07060a, 0 0 0 4px var(--steel);
+  --danger: #9eb0c2;
 }
 
 * { box-sizing: border-box; }

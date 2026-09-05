@@ -132,7 +132,7 @@ class Orchestrator:
         llm_ended_at = 0.0
         try:
             while True:
-                grace = 1.2
+                grace = 0.85
                 if llm_ended:
                     waited = asyncio.get_running_loop().time() - llm_ended_at
                     paint_done = paint_task is None or paint_task.done()

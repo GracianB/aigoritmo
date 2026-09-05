@@ -29,7 +29,7 @@ def take_speakable(
     held: str,
     incoming: list[str],
     *,
-    min_chars: int = 90,
+    min_chars: int = 72,
     max_chars: int = 220,
 ) -> tuple[list[str], str]:
     """Hold short clauses so Piper is not a burst of four-word clips."""
