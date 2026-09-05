@@ -7,10 +7,10 @@ voice:
   provider: piper
   voice_id: es_AR-daniela-high
   fallback_voice_id: es_MX-laura-high
-  length_scale: 1.06
+  length_scale: 1.02
   noise_scale: 0.62
   noise_w: 0.78
-  sentence_silence: 0.32
+  sentence_silence: 0.28
 llm:
   provider: ollama
   model: llama3.2:3b

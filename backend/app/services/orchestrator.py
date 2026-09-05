@@ -13,7 +13,7 @@ from app.core.config import Settings
 from app.domain.avatars import AvatarCatalog
 from app.domain.models import ChatMessage
 from app.domain.intent import wants_spread
-from app.domain.sentences import split_ready_sentences, take_speakable
+from app.domain.sentences import split_first_clip, split_ready_sentences, take_speakable
 from app.domain.speech import prepare_for_speech
 from app.services.audio_clips import AudioClipStore
 from app.services.conversations import ConversationStore
@@ -74,6 +74,8 @@ class Orchestrator:
         paint_task: asyncio.Task[bytes | None] | None = None
         cards_payload: list[dict[str, str]] = []
         caption = ""
+        tts = tts_provider_for(avatar.voice.provider, self._settings)
+        prewarm_task: asyncio.Task[None] | None = None
         should_draw = avatar.id in {"arcana", "arcano"} and wants_spread(user_text, explicit=draw_cards)
         if should_draw:
             spread = draw_spread(user_text, avatar.id)
@@ -92,7 +94,19 @@ class Orchestrator:
                     "cards": cards_payload,
                 },
             )
+            # Force the local museum card down the wire before LLM/Pollinations work.
+            yield ":\n\n"
+            await asyncio.sleep(0)
+            # Prefetch the card name while Ollama thinks — first speakable is usually this line.
+            opener = f"{caption}."
+            prewarm_task = asyncio.create_task(
+                tts.synthesize(opener, avatar.voice.voice_id, options=avatar.voice)
+            )
             paint_task = asyncio.create_task(self._paint_scene(spread))
+        elif avatar.id in {"arcana", "arcano"}:
+            kick = getattr(tts, "kick_prewarm", None)
+            if callable(kick):
+                prewarm_task = kick(avatar.voice.voice_id, avatar.voice)
 
         history = [
             ChatMessage(role="system", content=avatar.system_prompt),
@@ -100,7 +114,6 @@ class Orchestrator:
         ]
 
         llm = llm_provider_for(avatar.llm.provider, self._settings)
-        tts = tts_provider_for(avatar.voice.provider, self._settings)
         queue: asyncio.Queue[tuple[str, Any]] = asyncio.Queue()
 
         async def pump_llm() -> None:
@@ -179,10 +192,34 @@ class Orchestrator:
                 ready, buffer = split_ready_sentences(buffer)
                 min_chars = 1 if not speech_started else 40
                 speakable, held = take_speakable(held, ready, min_chars=min_chars)
+                if speakable and not speech_started:
+                    first, leftover = split_first_clip(speakable[0], max_chars=72)
+                    if first and first != speakable[0]:
+                        speakable = [first, *speakable[1:]]
+                    if leftover:
+                        held = f"{leftover} {held}".strip() if held else leftover
                 for sentence in speakable:
+                    is_first = not speech_started
+                    if is_first:
+                        # Caption prefetch (or Hola prewarm) should already be warm/cached.
+                        if prewarm_task is not None and not prewarm_task.done():
+                            with suppress(Exception):
+                                await prewarm_task
+                        speakable_at = asyncio.get_running_loop().time()
+                        logger.info(
+                            "first speakable chars=%d text=%r",
+                            len(sentence),
+                            sentence[:80],
+                        )
                     speech_started = True
                     async for audio_event in self._speak(tts, sentence, avatar.voice):
                         yield audio_event
+                    if is_first:
+                        logger.info(
+                            "first_audio gap=%.3fs chars=%d",
+                            asyncio.get_running_loop().time() - speakable_at,
+                            len(sentence),
+                        )
             leftover_bits = [held, buffer.strip()]
             leftover = " ".join(part for part in leftover_bits if part).strip()
             if leftover:

@@ -71,9 +71,16 @@ async def lifespan(app: FastAPI):
             logger.warning("ollama warmup failed: %s", exc)
 
     async def warmup_piper() -> None:
+        from app.adapters.tts.factory import tts_provider_for
+
         for avatar_id in ("arcana", "arcano"):
             try:
                 avatar = catalog.get(avatar_id)
+                tts = tts_provider_for(avatar.voice.provider, settings)
+                # Short clip first: loads the 100MB+ voice into OS cache quickly.
+                kick = getattr(tts, "kick_prewarm", None)
+                if callable(kick):
+                    await kick(avatar.voice.voice_id, avatar.voice)
                 url = await app.state.orchestrator.speak_text(avatar.id, avatar.welcome)
                 logger.info("piper warmup done: %s %s -> %s", avatar.id, avatar.voice.voice_id, url)
             except Exception as exc:  # noqa: BLE001

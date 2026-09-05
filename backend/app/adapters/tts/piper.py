@@ -2,15 +2,19 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import os
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 from app.adapters.tts.base import TtsError
 from app.domain.models import VoiceConfig
 from app.domain.speech import prepare_for_speech
+
+logger = logging.getLogger(__name__)
 
 CREATE_NO_WINDOW = 0x08000000
 _CACHE_MAX = 64
@@ -18,6 +22,10 @@ _SYNTH_TIMEOUT = 45.0
 _MEM_CACHE: dict[str, bytes] = {}
 _INFLIGHT: dict[str, asyncio.Task[bytes]] = {}
 _LOCK: asyncio.Lock | None = None
+_WARM_LOCK: asyncio.Lock | None = None
+_WARM_TASK: asyncio.Task[None] | None = None
+_SUBPROCESS_GATE: asyncio.Lock | None = None
+_PREWARM_TEXT = "Hola."
 
 
 def _lock() -> asyncio.Lock:
@@ -25,6 +33,20 @@ def _lock() -> asyncio.Lock:
     if _LOCK is None:
         _LOCK = asyncio.Lock()
     return _LOCK
+
+
+def _warm_lock() -> asyncio.Lock:
+    global _WARM_LOCK
+    if _WARM_LOCK is None:
+        _WARM_LOCK = asyncio.Lock()
+    return _WARM_LOCK
+
+
+def _subprocess_gate() -> asyncio.Lock:
+    global _SUBPROCESS_GATE
+    if _SUBPROCESS_GATE is None:
+        _SUBPROCESS_GATE = asyncio.Lock()
+    return _SUBPROCESS_GATE
 
 
 def _hide_window_kwargs() -> dict:
@@ -114,6 +136,43 @@ class PiperProvider:
             return None
         return wav
 
+    async def prewarm(self, voice_id: str, options: VoiceConfig | None = None) -> None:
+        """Load Piper + voice model into OS cache ahead of the first real clip."""
+        t0 = time.perf_counter()
+        try:
+            await self.synthesize(_PREWARM_TEXT, voice_id, options=options)
+            logger.info(
+                "piper prewarm ok voice=%s dt=%.3fs",
+                voice_id,
+                time.perf_counter() - t0,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("piper prewarm failed: %s", exc)
+
+    def kick_prewarm(self, voice_id: str, options: VoiceConfig | None = None) -> asyncio.Task[None]:
+        """Fire-and-forget prewarm so draw can overlap with LLM TTFT."""
+        global _WARM_TASK
+        existing = _WARM_TASK
+        if existing is not None and not existing.done():
+            return existing
+
+        async def _boot() -> None:
+            async with _warm_lock():
+                await self.prewarm(voice_id, options)
+
+        task = asyncio.create_task(_boot())
+        _WARM_TASK = task
+        return task
+
+    async def await_prewarm(self) -> None:
+        task = _WARM_TASK
+        if task is None or task.done():
+            return
+        try:
+            await task
+        except Exception:  # noqa: BLE001
+            pass
+
     async def synthesize(
         self,
         text: str,
@@ -131,13 +190,26 @@ class PiperProvider:
 
         model = self._model_path(voice_id, options.fallback_voice_id if options else None)
         key = self._cache_key(spoken, model, options)
+        t0 = time.perf_counter()
 
         cached = _MEM_CACHE.get(key)
         if cached:
+            logger.info(
+                "piper cache=mem chars=%d bytes=%d dt=%.3fs",
+                len(spoken),
+                len(cached),
+                time.perf_counter() - t0,
+            )
             return cached
         disk = self._from_disk(key)
         if disk:
             _MEM_CACHE[key] = disk
+            logger.info(
+                "piper cache=disk chars=%d bytes=%d dt=%.3fs",
+                len(spoken),
+                len(disk),
+                time.perf_counter() - t0,
+            )
             return disk
 
         async with _lock():
@@ -165,6 +237,13 @@ class PiperProvider:
             if _INFLIGHT.get(key) is task:
                 _INFLIGHT.pop(key, None)
             self._remember(key, wav)
+        logger.info(
+            "piper cache=miss chars=%d bytes=%d dt=%.3fs voice=%s",
+            len(spoken),
+            len(wav),
+            time.perf_counter() - t0,
+            model.name,
+        )
         return wav
 
     def _build_cmd(self, model: Path, out_path: Path, options: VoiceConfig | None) -> list[str]:
@@ -211,9 +290,11 @@ class PiperProvider:
         os.close(fd)
         out_path = Path(tmp_name)
         cmd = self._build_cmd(model, out_path, options)
+        t0 = time.perf_counter()
         try:
             try:
-                proc = await asyncio.to_thread(self._run_piper, cmd, text)
+                async with _subprocess_gate():
+                    proc = await asyncio.to_thread(self._run_piper, cmd, text)
             except subprocess.TimeoutExpired:
                 raise TtsError(
                     "piper_unavailable",
@@ -241,6 +322,12 @@ class PiperProvider:
                     "piper_unavailable",
                     f"Piper no generó un WAV válido: {stderr or 'salida vacía'}",
                 )
+            logger.info(
+                "piper subprocess chars=%d bytes=%d dt=%.3fs",
+                len(text),
+                len(wav),
+                time.perf_counter() - t0,
+            )
             return wav
         finally:
             try:

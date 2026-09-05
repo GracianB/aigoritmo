@@ -1,4 +1,4 @@
-from app.domain.sentences import split_ready_sentences, take_speakable
+from app.domain.sentences import split_first_clip, split_ready_sentences, take_speakable
 
 
 def test_split_two_sentences():
@@ -66,3 +66,20 @@ def test_later_clips_hold_below_min_chars():
     speakable, held = take_speakable("", ["Di lo que se ve."], min_chars=40)
     assert speakable == []
     assert held == "Di lo que se ve."
+
+
+def test_split_first_clip_keeps_short():
+    first, rest = split_first_clip("El Loco.", max_chars=72)
+    assert first == "El Loco."
+    assert rest == ""
+
+
+def test_split_first_clip_cuts_long_at_sentence():
+    text = (
+        "La carta que sale es El Loco, un cuerpo al borde del abismo. "
+        "Despues viene el resto de la lectura con mas detalle."
+    )
+    first, rest = split_first_clip(text, max_chars=72)
+    assert "Loco" in first
+    assert len(first) <= 80
+    assert rest.startswith("Despues") or "resto" in rest

@@ -1,6 +1,6 @@
 import re
 
-_SENTENCE_END = re.compile(r"([.!?…]+)([\"»”']*)(\s+|(?=[A-ZÁÉÍÓÚÑ¿¡])|$)")
+_SENTENCE_END = re.compile(r"([.!?…]+)([\"\u201d\u2019']*)(\s+|(?=[A-ZÁÉÍÓÚÑÜ])|$)")
 
 
 def split_ready_sentences(buffer: str) -> tuple[list[str], str]:
@@ -56,3 +56,40 @@ def take_speakable(
             speakable.append(current)
             current = ""
     return speakable, current
+
+
+def split_first_clip(text: str, max_chars: int = 72) -> tuple[str, str]:
+    """Keep the opening Piper clip short so first_audio arrives sooner.
+
+    Returns (first_clip, remainder). Prefers a sentence end inside the window,
+    else a word boundary near max_chars.
+    """
+    text = (text or "").strip()
+    if not text:
+        return "", ""
+    if len(text) <= max_chars:
+        return text, ""
+
+    window = text[: max_chars + 1]
+    best = -1
+    for i, ch in enumerate(window):
+        if i < 18:
+            continue
+        if ch in ".!?…":
+            best = i + 1
+        elif ch in ",;:" and best < 0 and i >= 28:
+            best = i + 1
+    if best > 0:
+        first = text[:best].strip()
+        rest = text[best:].strip()
+        if first:
+            return first, rest
+
+    cut = max_chars
+    while cut > 18 and not text[cut - 1].isspace():
+        cut -= 1
+    if cut <= 18:
+        cut = max_chars
+    first = text[:cut].strip()
+    rest = text[cut:].strip()
+    return first, rest
