@@ -1765,3 +1765,256 @@
   }
   .gate.is-leaving { opacity: 0; filter: none; transform: none; }
 }
+
+/* --- Arcano salon pass: steel/night to Arcana parity --- */
+
+.arcana[data-avatar="arcano"] {
+  color: var(--text);
+  font-family: var(--font);
+  background:
+    radial-gradient(ellipse at 52% 8%, rgba(40, 72, 104, .22), transparent 44%),
+    radial-gradient(ellipse at 78% 88%, rgba(18, 36, 56, .35), transparent 42%),
+    var(--bg);
+  transition: background var(--dur-slow) var(--ease), color var(--dur) ease;
+}
+
+.arcana[data-avatar="arcano"]::before {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(90, 130, 170, .07), transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(20, 40, 60, .18), transparent 55%);
+  opacity: .9;
+}
+
+.arcana[data-avatar="arcano"] .brand strong,
+.arcana[data-avatar="arcano"] .console__head strong,
+.arcana[data-avatar="arcano"] .gate__copy h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: none;
+  color: var(--gold-lit);
+}
+
+.arcana[data-avatar="arcano"] .brand__house,
+.arcana[data-avatar="arcano"] .status__phrase,
+.arcana[data-avatar="arcano"] .presence__caption,
+.arcana[data-avatar="arcano"] .disclaimer,
+.arcana[data-avatar="arcano"] .console__head span,
+.arcana[data-avatar="arcano"] .gate__also,
+.arcana[data-avatar="arcano"] .gate__note {
+  font-family: var(--inscription);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #8aa0b4;
+}
+
+.arcana[data-avatar="arcano"] .presence__caption {
+  font-size: .62rem;
+  opacity: .88;
+}
+
+.arcana[data-avatar="arcano"] .arcana__header {
+  background: linear-gradient(180deg, rgba(5, 7, 11, .55), transparent 90%);
+}
+
+.arcana[data-avatar="arcano"] .avatar-switch {
+  border-color: color-mix(in srgb, var(--steel) 28%, transparent);
+  background: rgba(5, 9, 14, .5);
+  box-shadow: inset 0 1px 0 rgba(180, 206, 224, .06);
+}
+
+.arcana[data-avatar="arcano"] .avatar-switch button.is-active {
+  background: color-mix(in srgb, var(--steel) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--steel) 42%, transparent);
+  color: var(--gold-lit);
+}
+
+.arcana[data-avatar="arcano"] .console {
+  border-color: color-mix(in srgb, var(--steel) 30%, transparent);
+  background:
+    linear-gradient(165deg, rgba(18, 28, 40, .55), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 94%, transparent), rgba(5, 8, 12, .98));
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, .62),
+    inset 0 1px 0 rgba(190, 214, 230, .1),
+    0 0 48px rgba(40, 70, 100, .1);
+  backdrop-filter: blur(10px) saturate(.92);
+}
+
+.arcana[data-avatar="arcano"] .console__head {
+  border-bottom-color: color-mix(in srgb, var(--steel) 18%, transparent);
+}
+
+.arcana[data-avatar="arcano"] .chip {
+  color: #b8c8d6;
+  border-bottom-color: color-mix(in srgb, var(--steel) 32%, transparent);
+}
+
+.arcana[data-avatar="arcano"] .chip i,
+.arcana[data-avatar="arcano"] .chip--draw {
+  color: var(--gold-lit);
+}
+
+.arcana[data-avatar="arcano"] .chip:hover {
+  color: #e8f2fa;
+  border-bottom-color: var(--steel);
+}
+
+.arcana[data-avatar="arcano"] .bubble--bot {
+  border-color: color-mix(in srgb, var(--steel) 16%, transparent);
+  background: rgba(10, 16, 24, .55);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--steel) 45%, transparent);
+}
+
+.arcana[data-avatar="arcano"] .bubble--user {
+  background: rgba(28, 42, 58, .55);
+  border-color: color-mix(in srgb, var(--steel) 22%, transparent);
+}
+
+.arcana[data-avatar="arcano"] .bubble--bot.is-streaming .bubble__content::after {
+  color: var(--steel);
+}
+
+.arcana[data-avatar="arcano"] .composer,
+.arcana[data-avatar="arcano"] .composer textarea {
+  border-color: color-mix(in srgb, var(--steel) 24%, transparent);
+  background: rgba(6, 10, 16, .72);
+  color: var(--text);
+}
+
+.arcana[data-avatar="arcano"] .composer:focus-within {
+  border-color: color-mix(in srgb, var(--steel) 48%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--steel) 22%, transparent);
+}
+
+.arcana[data-avatar="arcano"] .send {
+  background: linear-gradient(180deg, #d5e6f2, #8aa3b8);
+  color: #071018;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .28);
+}
+
+.arcana[data-avatar="arcano"] .ritual-btn--hero {
+  background:
+    linear-gradient(180deg, rgba(147, 174, 198, .22), rgba(147, 174, 198, .06));
+  border-color: color-mix(in srgb, var(--steel) 48%, transparent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(210, 228, 240, .14);
+}
+
+.arcana[data-avatar="arcano"] .ritual-btn--hero b {
+  color: #e8f2fa;
+  font-family: var(--display);
+  letter-spacing: .03em;
+}
+
+.arcana[data-avatar="arcano"] .ritual-btn--hero small {
+  color: #8aa0b4;
+}
+
+.arcana[data-avatar="arcano"] .status__dot {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--idle) 70%, transparent);
+}
+
+/* Orb: brushed steel jewel — colder glass, metallic core, night rim */
+.arcana[data-avatar="arcano"] .presence.is-orb {
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(48, 78, 112, .42), transparent 52%),
+    radial-gradient(ellipse at 50% 100%, rgba(20, 36, 54, .35), transparent 48%),
+    radial-gradient(circle at 50% 48%, rgba(8, 14, 22, .2), transparent 60%),
+    var(--bg);
+}
+
+.arcana[data-avatar="arcano"] .orb {
+  filter:
+    drop-shadow(0 8px 20px rgba(90, 130, 170, .28))
+    drop-shadow(0 26px 28px rgba(0, 0, 0, .55));
+}
+
+.arcana[data-avatar="arcano"] .orb__glass {
+  background:
+    radial-gradient(circle at 32% 28%, rgba(230, 242, 252, .28), transparent 34%),
+    radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--orb) 18%, transparent), rgba(4, 8, 14, .82) 74%);
+  border: 1px solid color-mix(in srgb, var(--orb) 58%, #1a2836);
+  box-shadow:
+    inset 0 0 16px color-mix(in srgb, var(--orb) 28%, transparent),
+    inset 0 1px 0 rgba(220, 236, 248, .35),
+    0 0 22px color-mix(in srgb, var(--orb) 24%, transparent);
+}
+
+.arcana[data-avatar="arcano"] .orb__core {
+  background:
+    radial-gradient(circle at 38% 34%, #f2f7fb, color-mix(in srgb, var(--orb) 55%, white) 16%, var(--orb) 46%, #071018 84%);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--orb) 65%, transparent);
+}
+
+.arcana[data-avatar="arcano"] .orb__rim {
+  border-color: color-mix(in srgb, #c5d8e8 55%, transparent);
+  box-shadow:
+    inset 0 0 0 1px rgba(12, 20, 28, .55),
+    0 0 8px rgba(140, 176, 206, .25);
+}
+
+.arcana[data-avatar="arcano"] .orb__ring {
+  border-color: color-mix(in srgb, var(--orb) 55%, white);
+  opacity: .72;
+}
+
+.arcana[data-avatar="arcano"] .orb__plasma {
+  filter: blur(10px) saturate(.85) hue-rotate(18deg) brightness(1.05);
+  opacity: .5;
+}
+
+.arcana[data-avatar="arcano"] .orb__swirl {
+  opacity: .18;
+  filter: hue-rotate(20deg) saturate(.8);
+}
+
+.arcana[data-avatar="arcano"] .orb__shine {
+  background: linear-gradient(135deg, rgba(255, 255, 255, .55), transparent 42%);
+  opacity: .55;
+}
+
+.arcana[data-avatar="arcano"] .spread__stage {
+  background:
+    linear-gradient(145deg, #d0dde8 0%, #8fa8bc 36%, #3a4f62 70%, #b4c8d8 100%);
+  box-shadow:
+    0 22px 40px rgba(0, 0, 0, .58),
+    0 2px 0 rgba(200, 220, 236, .18),
+    inset 0 0 0 1px rgba(8, 14, 22, .55);
+}
+
+.arcana[data-avatar="arcano"] .spread__frame.is-waiting {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(147, 174, 198, .18), transparent 48%),
+    #070b11;
+}
+
+.arcana[data-avatar="arcano"] .spread__missing {
+  color: var(--gold-lit);
+}
+
+.arcana[data-avatar="arcano"] .spread__missing em {
+  color: var(--steel-2);
+}
+
+.arcana[data-avatar="arcano"] .thinking em {
+  color: #a8bdd0;
+  letter-spacing: .14em;
+}
+
+.arcana[data-avatar="arcano"] .studio-alert {
+  border-left-color: var(--garnet-lit);
+}
+
+.arcana[data-avatar="arcano"] .studio-alert.is-soft {
+  border-left-color: var(--steel-2);
+}
+
+.arcana[data-avatar="arcano"] .icon-btn {
+  border-color: color-mix(in srgb, var(--steel) 28%, transparent);
+  color: #c5d6e6;
+}
+
+.arcana[data-avatar="arcano"] .icon-btn:hover {
+  background: color-mix(in srgb, var(--steel) 14%, transparent);
+  color: #e8f2fa;
+}
