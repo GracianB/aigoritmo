@@ -46,23 +46,38 @@
 }
 
 .arcana[data-avatar="arcano"] {
-  --gold: #9eb4c8;
-  --gold-2: #7e96ac;
-  --gold-lit: #d4e3ef;
-  --gold-deep: #3d5164;
-  --garnet: #2c445c;
-  --garnet-lit: #5b7a98;
-  --line: rgba(158, 180, 200, 0.2);
-  --idle: #8aa3b8;
-  --think: #6d8aa6;
-  --write: #d0e0ec;
-  --speak: #c2d6e8;
+  /* Steel / night salon — cold, dry, distinct from Arcana gold/velvet */
+  --bg: #05070b;
+  --velvet: #070b11;
+  --ink: #0a1018;
+  --text: #e6eef6;
+  --muted: #7a8898;
+  --gold: #9eb6cc;
+  --gold-2: #6f879e;
+  --gold-lit: #d7e6f2;
+  --gold-deep: #2a3c4e;
+  --garnet: #1e3348;
+  --garnet-lit: #4f6f8c;
+  --blood: #0c1520;
+  --steel: #93aec6;
+  --steel-2: #6a849c;
+  --steel-deep: #101925;
+  --line: rgba(147, 174, 198, 0.22);
+  --idle: #7f9bb4;
+  --think: #5c7d9a;
+  --write: #cfe0ee;
+  --speak: #b8d0e4;
   --accent: var(--steel);
-  --accent-2: #4d6a86;
-  --wash: rgba(18, 30, 42, 0.48);
-  --panel: #0b1016;
-  --focus: 0 0 0 2px #07060a, 0 0 0 4px var(--steel);
-  --danger: #9eb0c2;
+  --accent-2: #3d5a74;
+  --wash: rgba(12, 28, 44, 0.55);
+  --panel: #0a1017;
+  --focus: 0 0 0 2px #05070b, 0 0 0 4px #93aec6;
+  --danger: #9aacbe;
+  --font: "IBM Plex Sans", "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  --display: "Space Grotesk", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --inscription: "Space Grotesk", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --radius: 6px;
+  --radius-sm: 3px;
 }
 
 * { box-sizing: border-box; }
@@ -85,3 +100,4 @@ button { border-radius: var(--radius-sm); cursor: pointer; touch-action: manipul
 :focus { outline: none; }
 :focus-visible { box-shadow: var(--focus); }
 ::selection { background: rgba(214, 181, 122, .28); color: #fff; }
+.arcana[data-avatar="arcano"] ::selection { background: rgba(147, 174, 198, .32); color: #fff; }
