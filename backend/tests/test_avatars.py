@@ -56,3 +56,13 @@ def test_arcana_uses_feminine_high_voice():
     assert voice.voice_id == "es_AR-daniela-high"
     assert voice.fallback_voice_id == "es_MX-laura-high"
     assert voice.length_scale >= 1.0
+
+
+def test_arcana_prefers_spacexai_but_keeps_ollama_fallback():
+    catalog = AvatarCatalog(PROJECT_DIR / "avatars")
+    for avatar_id in ("arcana", "arcano"):
+        llm = catalog.get(avatar_id).llm
+        assert llm.provider == "ollama"
+        assert llm.model == "llama3.2:3b"
+        assert llm.preferred_provider == "spacexai"
+        assert llm.catalog_model == "grok-4.5"

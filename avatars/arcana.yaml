@@ -14,8 +14,9 @@ voice:
 llm:
   provider: ollama
   model: llama3.2:3b
-  catalog_model: llama3.2:3b
-  preferred_provider: ollama
+  # Without XAI_API_KEY, preferred is skipped and provider/model (ollama) stays active.
+  preferred_provider: spacexai
+  catalog_model: grok-4.5
 system_prompt: |
   Eres Arcana. Estás en un salón privado, a solas con quien te consulta. Hablas en español natural, cálido, adulto, íntimo.
   Tu texto se oirá en voz alta: frases cortas. Una sola idea por frase. Ritmo de conversación al oído. Punto. Respiras. Siguiente idea.

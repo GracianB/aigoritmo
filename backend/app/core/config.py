@@ -34,7 +34,11 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
 
-    llm_provider: str = "ollama"
+    # Empty = no global override; resolve via avatar preferred_provider then provider.
+    # Set LLM_PROVIDER or FORCE_LLM_PROVIDER (e.g. spacexai) to force one provider.
+    llm_provider: str = ""
+    force_llm_provider: str = ""
+
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "llama3.2:3b"
     ollama_vision_model: str = "llama3.2:3b"

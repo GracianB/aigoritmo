@@ -7,6 +7,7 @@ import httpx
 from PIL import Image, UnidentifiedImageError
 
 from app.adapters.llm.base import LlmError
+from app.adapters.llm.factory import resolve_vision_llm
 from app.core.config import Settings
 from app.domain.models import Avatar, ChatMessage
 
@@ -40,12 +41,13 @@ async def analyze_image(
     history: list[ChatMessage],
 ) -> str:
     normalized, mime = normalize_image(image_bytes)
-    provider = avatar.llm.provider.lower().strip()
+    resolved = resolve_vision_llm(avatar, settings)
+    provider = resolved.provider
     if provider == "ollama":
-        return await _ollama(settings, avatar, normalized, prompt, history)
+        return await _ollama(settings, avatar, normalized, prompt, history, model=resolved.model)
     if provider == "spacexai":
-        return await _xai(settings, avatar, normalized, mime, prompt, history)
-    raise LlmError("vision_unsupported", f"El proveedor {provider} no soporta visión en esta app.")
+        return await _xai(settings, avatar, normalized, mime, prompt, history, model=resolved.model)
+    raise LlmError("vision_unsupported", f"El proveedor {provider} no soporta vision en esta app.")
 
 
 async def _ollama(
@@ -54,6 +56,7 @@ async def _ollama(
     image_bytes: bytes,
     prompt: str,
     history: list[ChatMessage],
+    model: str | None = None,
 ) -> str:
     messages = [{"role": "system", "content": avatar.system_prompt}]
     for message in history[-10:]:
@@ -66,7 +69,7 @@ async def _ollama(
         }
     )
     payload = {
-        "model": settings.ollama_vision_model,
+        "model": model or settings.ollama_vision_model,
         "stream": False,
         "messages": messages,
         "options": {"temperature": 0.45},
@@ -98,6 +101,7 @@ async def _xai(
     mime: str,
     prompt: str,
     history: list[ChatMessage],
+    model: str | None = None,
 ) -> str:
     if not settings.xai_api_key:
         raise LlmError("spacexai_unconfigured", "Falta XAI_API_KEY para analizar imágenes con xAI.")
@@ -116,7 +120,7 @@ async def _xai(
             ],
         }
     )
-    payload = {"model": settings.xai_vision_model, "messages": messages, "stream": False}
+    payload = {"model": model or settings.xai_vision_model, "messages": messages, "stream": False}
     headers = {"Authorization": f"Bearer {settings.xai_api_key}", "Content-Type": "application/json"}
     try:
         async with httpx.AsyncClient(timeout=180.0) as client:

@@ -62,3 +62,14 @@ Vite opcional en :5173. Tras editar el frontend, reconstruye dist para que :8000
 ## Imágenes
 
 No hace falta enviar una foto. La visión de la tirada se dibuja al instante en local; Pollinations puede sustituirla en unos 8 segundos. Subir una imagen es opcional.
+
+
+## Mañana API (xAI / SpaceXAI)
+
+Tres pasos — sin pegar claves en el chat:
+
+1. Copia `.env.example` → `.env` (si aún no existe) y añade solo en disco: `XAI_API_KEY=...` (nunca en git ni en el chat).
+2. Reinicia la API (`scripts/start-demo.ps1` o uvicorn). Arcana/Arcano ya tienen `preferred_provider: spacexai` + `catalog_model: grok-4.5`; con la clave, el chat usa xAI. Sin clave, siguen en Ollama.
+3. Comprueba `http://127.0.0.1:8000/health` → `providers.spacexai.ready: true` (la clave no se muestra). Opcional: `LLM_PROVIDER=spacexai` fuerza xAI en todos los avatares.
+
+Piper (voz) sigue 100% local. Pollinations (imagen) no cambia.

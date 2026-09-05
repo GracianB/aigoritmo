@@ -6,7 +6,7 @@ from contextlib import suppress
 from typing import Any
 
 from app.adapters.llm.base import LlmError
-from app.adapters.llm.factory import llm_provider_for
+from app.adapters.llm.factory import llm_provider_for, resolve_chat_llm
 from app.adapters.tts.base import TtsError
 from app.adapters.tts.factory import tts_provider_for
 from app.core.config import Settings
@@ -113,12 +113,13 @@ class Orchestrator:
             *conv.messages,
         ]
 
-        llm = llm_provider_for(avatar.llm.provider, self._settings)
+        resolved = resolve_chat_llm(avatar, self._settings)
+        llm = llm_provider_for(resolved.provider, self._settings)
         queue: asyncio.Queue[tuple[str, Any]] = asyncio.Queue()
 
         async def pump_llm() -> None:
             try:
-                async for token in llm.stream(history, avatar.llm.model):
+                async for token in llm.stream(history, resolved.model):
                     await queue.put(("token", token))
                 await queue.put(("end", None))
             except LlmError as exc:
