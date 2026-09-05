@@ -64,12 +64,14 @@ Vite opcional en :5173. Tras editar el frontend, reconstruye dist para que :8000
 No hace falta enviar una foto. La visión de la tirada se dibuja al instante en local; Pollinations puede sustituirla en unos 8 segundos. Subir una imagen es opcional.
 
 
-## Mañana API (xAI / SpaceXAI)
+## Mañana API — tres modos (Ollama / Grok / ChatGPT)
 
-Tres pasos — sin pegar claves en el chat:
+Sin pegar claves en el chat. Copia `.env.example` → `.env` y edita solo en disco.
 
-1. Copia `.env.example` → `.env` (si aún no existe) y añade solo en disco: `XAI_API_KEY=...` (nunca en git ni en el chat).
-2. Reinicia la API (`scripts/start-demo.ps1` o uvicorn). Arcana/Arcano ya tienen `preferred_provider: spacexai` + `catalog_model: grok-4.5`; con la clave, el chat usa xAI. Sin clave, siguen en Ollama.
-3. Comprueba `http://127.0.0.1:8000/health` → `providers.spacexai.ready: true` (la clave no se muestra). Opcional: `LLM_PROVIDER=spacexai` fuerza xAI en todos los avatares.
+1. **Ollama (local, por defecto)** — sin `XAI_API_KEY` ni `OPENAI_API_KEY` (o con claves vacías). Arcana/Arcano usan `provider: ollama`. Arranca Ollama + demo como arriba.
+2. **Grok (xAI / SpaceXAI)** — en `.env`: `XAI_API_KEY=...`. Reinicia la API. Arcana/Arcano ya tienen `preferred_provider: spacexai` + `catalog_model: grok-4.5`; con la clave, el chat usa Grok. Health: `xai_ready` / `providers.spacexai.ready: true` (la clave no se muestra).
+3. **ChatGPT (OpenAI)** — en `.env`: `OPENAI_API_KEY=...` y `LLM_PROVIDER=openai`. Reinicia la API. Modelo por defecto `gpt-4.1` (`OPENAI_MODEL`); barato: `OPENAI_MODEL=gpt-4o-mini`. Health: `openai_ready` / `providers.openai.ready: true`.
+
+`LLM_PROVIDER` / `FORCE_LLM_PROVIDER` aceptan `openai` | `spacexai` | `ollama` y pisan el preferred del YAML. No hace falta poner ambas claves: con solo xAI funciona Grok; con solo OpenAI + `LLM_PROVIDER=openai` funciona ChatGPT.
 
 Piper (voz) sigue 100% local. Pollinations (imagen) no cambia.

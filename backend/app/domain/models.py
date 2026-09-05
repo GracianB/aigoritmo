@@ -15,10 +15,10 @@ class VoiceConfig(BaseModel):
 
 
 class LlmConfig(BaseModel):
-    provider: Literal["ollama", "spacexai"]
+    provider: Literal["ollama", "spacexai", "openai"]
     model: str
     catalog_model: str | None = None
-    preferred_provider: Literal["ollama", "spacexai"] | None = None
+    preferred_provider: Literal["ollama", "spacexai", "openai"] | None = None
 
 
 class Capabilities(BaseModel):

@@ -26,6 +26,7 @@ def health(request: Request) -> dict:
         for voice in DEMO_VOICES
     }
     xai_ready = provider_configured("spacexai", settings)
+    openai_ready = provider_configured("openai", settings)
     override = (settings.force_llm_provider or settings.llm_provider or "").strip() or None
     return {
         "status": "ok",
@@ -50,6 +51,15 @@ def health(request: Request) -> dict:
                 # Never expose XAI_API_KEY — only presence.
                 "api_key_present": xai_ready,
             },
+            "openai": {
+                "ready": openai_ready,
+                "configured": openai_ready,
+                "base_url": settings.openai_base_url,
+                "chat_model": settings.openai_model,
+                "vision_model": settings.openai_vision_model,
+                # Never expose OPENAI_API_KEY — only presence.
+                "api_key_present": openai_ready,
+            },
         },
         # Backward-compatible flat fields (ollama-centric demo).
         "llm_provider": override or "auto",
@@ -65,4 +75,6 @@ def health(request: Request) -> dict:
         "ollama_chat_ready": settings.ollama_model in models
         or f"{settings.ollama_model}:latest" in models,
         "spacexai_ready": xai_ready,
+        "xai_ready": xai_ready,
+        "openai_ready": openai_ready,
     }

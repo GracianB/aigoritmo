@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     port: int = 8000
 
     # Empty = no global override; resolve via avatar preferred_provider then provider.
-    # Set LLM_PROVIDER or FORCE_LLM_PROVIDER (e.g. spacexai) to force one provider.
+    # Set LLM_PROVIDER or FORCE_LLM_PROVIDER (openai|spacexai|ollama) to force one provider.
     llm_provider: str = ""
     force_llm_provider: str = ""
 
@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     xai_base_url: str = "https://api.x.ai/v1"
     xai_model: str = "grok-4.5"
     xai_vision_model: str = "grok-4.5"
+
+    # OpenAI / ChatGPT. Quality default gpt-4.1; for cheaper runs set OPENAI_MODEL=gpt-4o-mini.
+    openai_api_key: str = ""
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_model: str = "gpt-4.1"
+    openai_vision_model: str = "gpt-4.1"
 
     piper_executable: Path = Field(default_factory=lambda: PIPER_ROOT / "piper.exe")
     piper_models_dir: Path = Field(default_factory=lambda: PIPER_ROOT / "models")

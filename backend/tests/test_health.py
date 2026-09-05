@@ -7,7 +7,13 @@ def test_health_ok(client):
     assert "providers" in body
     assert "ollama" in body["providers"]
     assert "spacexai" in body["providers"]
+    assert "openai" in body["providers"]
     assert "api_key_present" in body["providers"]["spacexai"]
+    assert "api_key_present" in body["providers"]["openai"]
+    assert "xai_ready" in body
+    assert "openai_ready" in body
+    assert body["xai_ready"] is body["spacexai_ready"]
+    assert isinstance(body["openai_ready"], bool)
     # Never leak the key value.
     flat = str(body)
     assert "xai-" not in flat.lower() or body["providers"]["spacexai"]["api_key_present"] in (True, False)

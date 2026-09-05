@@ -14,7 +14,7 @@ voice:
 llm:
   provider: ollama
   model: llama3.2:3b
-  # Without XAI_API_KEY, preferred is skipped and provider/model (ollama) stays active.
+  # Without XAI_API_KEY, preferred is skipped → ollama. Override: LLM_PROVIDER=openai|spacexai|ollama.
   preferred_provider: spacexai
   catalog_model: grok-4.5
 system_prompt: |

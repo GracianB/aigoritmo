@@ -47,6 +47,8 @@ async def analyze_image(
         return await _ollama(settings, avatar, normalized, prompt, history, model=resolved.model)
     if provider == "spacexai":
         return await _xai(settings, avatar, normalized, mime, prompt, history, model=resolved.model)
+    if provider == "openai":
+        return await _openai(settings, avatar, normalized, mime, prompt, history, model=resolved.model)
     raise LlmError("vision_unsupported", f"El proveedor {provider} no soporta vision en esta app.")
 
 
@@ -138,3 +140,62 @@ async def _xai(
             return text
     except httpx.HTTPError as exc:
         raise LlmError("spacexai_vision_unavailable", "No se pudo contactar con xAI para analizar la imagen.") from exc
+
+
+async def _openai(
+    settings: Settings,
+    avatar: Avatar,
+    image_bytes: bytes,
+    mime: str,
+    prompt: str,
+    history: list[ChatMessage],
+    model: str | None = None,
+) -> str:
+    if not settings.openai_api_key:
+        raise LlmError("openai_unconfigured", "Falta OPENAI_API_KEY para analizar imágenes con OpenAI.")
+
+    messages: list[dict] = [{"role": "system", "content": avatar.system_prompt}]
+    for message in history[-10:]:
+        if message.role != "system":
+            messages.append({"role": message.role, "content": message.content})
+    data_url = f"data:{mime};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+    messages.append(
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ],
+        }
+    )
+    payload = {
+        "model": model or settings.openai_vision_model,
+        "messages": messages,
+        "stream": False,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.openai_api_key}",
+        "Content-Type": "application/json",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=180.0) as client:
+            response = await client.post(
+                f"{settings.openai_base_url.rstrip('/')}/chat/completions",
+                json=payload,
+                headers=headers,
+            )
+            if response.status_code >= 400:
+                raise LlmError(
+                    "openai_vision_unavailable",
+                    f"OpenAI respondió {response.status_code}: {response.text[:300]}",
+                )
+            data = response.json()
+            text = (((data.get("choices") or [{}])[0].get("message") or {}).get("content") or "").strip()
+            if not text:
+                raise LlmError("vision_empty", "El modelo visual no devolvió una interpretación.")
+            return text
+    except httpx.HTTPError as exc:
+        raise LlmError(
+            "openai_vision_unavailable",
+            "No se pudo contactar con OpenAI para analizar la imagen.",
+        ) from exc
