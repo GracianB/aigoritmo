@@ -27,8 +27,8 @@
   --radius: 8px;
   --radius-sm: 4px;
   --focus: 0 0 0 2px #07060a, 0 0 0 4px var(--gold);
-  --console-compact-w: min(320px, 28vw);
-  --console-expanded-w: min(440px, 38vw);
+  --console-compact-w: clamp(480px, 48vw, 640px);
+  --console-expanded-w: clamp(580px, 54vw, 760px);
   --ease: cubic-bezier(.22, .68, .28, 1);
   --dur: 380ms;
   --dur-slow: 560ms;
