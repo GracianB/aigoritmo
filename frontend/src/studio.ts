@@ -172,12 +172,12 @@ function renderStudio(root: HTMLElement): void {
       </div>
 
       <header class="arcana__header">
-        <div class="brand">${sigilMarkup()}<span class="brand__house">Consulta privada</span><span class="brand__name">${escapeHtml(avatar.name)}</span></div>
+        <div class="brand">${sigilMarkup()}<span class="brand__house">${avatar.id === "arcano" ? "Salón de acero" : "Salón de terciopelo"}</span><span class="brand__name">${escapeHtml(avatar.name)}</span></div>
         <div class="status">
           <div class="avatar-switch" id="avatar-switch" role="tablist" aria-label="Quién te recibe">
             ${state.roster.map((item) => `<button type="button" role="tab" data-avatar="${item.id}" aria-selected="${item.id === avatar.id}" class="${item.id === avatar.id ? "is-active" : ""}" title="${item.id === "arcano" ? "Presencia grave" : "Presencia cálida"}">${escapeHtml(item.name)}</button>`).join("")}
           </div>
-          <span class="status__dot" aria-hidden="true"></span><span id="voice-status" class="status__phrase">la sala en calma</span>
+          <span class="status__dot" aria-hidden="true"></span><span id="voice-status" class="status__phrase">${avatar.id === "arcano" ? "la sala en sombra" : "la sala en calma"}</span>
         </div>
       </header>
 
@@ -185,8 +185,8 @@ function renderStudio(root: HTMLElement): void {
         <div class="console__ornament" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
         <div class="console__head">
           <div>
-            <em class="console__kicker">Mesa</em>
-            <strong>La carta habla aquí</strong>
+            <em class="console__kicker">${avatar.id === "arcano" ? "Mesa fría" : "Mesa cálida"}</em>
+            <strong>${avatar.id === "arcano" ? "Una carta. Nada más." : "La carta habla aquí"}</strong>
             <span id="feature">${escapeHtml(avatar.feature)}</span>
           </div>
           <div class="console__head-actions">
@@ -199,7 +199,7 @@ function renderStudio(root: HTMLElement): void {
         <div class="studio-alert" id="studio-alert" hidden role="status"></div>
 
         <div class="quick-actions${vision ? "" : " is-solo"}">
-          <button class="ritual-btn ritual-btn--hero" id="draw" type="button"><span aria-hidden="true">✦</span><b>Tirar una carta</b><small>un solo arcano mayor</small></button>
+          <button class="ritual-btn ritual-btn--hero" id="draw" type="button"><span aria-hidden="true">${avatar.id === "arcano" ? "◈" : "✦"}</span><b>${avatar.id === "arcano" ? "Una carta" : "Tirar una carta"}</b><small>un solo arcano mayor</small></button>
           ${vision ? `<button class="ritual-btn ritual-btn--quiet" id="vision" type="button"><span aria-hidden="true">◈</span><b>Opcional: tu foto</b><small>si quieres que mire algo tuyo</small></button>` : ""}
           <input id="image-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
         </div>
@@ -226,7 +226,7 @@ function renderStudio(root: HTMLElement): void {
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.6 21 12 3.4 3.4l.1 6.7L15 12 3.5 13.9z"/></svg>
           </button>
         </form>
-        <p class="disclaimer">Simbólico, no un dictamen. ${escapeHtml(avatar.name)} tira una sola carta.</p>
+        <p class="disclaimer">Versión definitiva · simbólico, no un dictamen. ${escapeHtml(avatar.name)} tira una sola carta.</p>
       </section>
     </main>
   `;
@@ -1086,7 +1086,7 @@ function escapeHtml(value: string): string {
 
 function gateHtml(): string {
   return `<div class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" aria-describedby="gate-lede">
-    <video class="gate__video" autoplay muted loop playsinline poster="/media/image/arcana.jpg?v=land" src="/media/videos/portada.mp4" aria-hidden="true"></video>
+    <video class="gate__video" autoplay muted loop playsinline poster="/media/image/arcana.jpg?v=def" src="/media/videos/portada.mp4" aria-hidden="true"></video>
     <div class="gate__veil"></div>
     <div class="gate__dust" aria-hidden="true"></div>
     <div class="gate__frame" aria-hidden="true">
@@ -1096,14 +1096,14 @@ function gateHtml(): string {
       <span class="gate__corner gate__corner--br"></span>
     </div>
     <div class="gate__copy">
-      <p class="gate__kicker">Salón privado</p>
-      <p class="gate__house">A solas · en esta máquina</p>
+      <p class="gate__kicker">Versión definitiva</p>
+      <p class="gate__house">Salón privado · en esta máquina</p>
       <h1 id="gate-title">Arcana</h1>
-      <p class="gate__also" aria-hidden="true">también Arcano</p>
+      <p class="gate__also" aria-hidden="true">y Arcano</p>
       <div class="gate__rule" aria-hidden="true"></div>
-      <p class="gate__lede" id="gate-lede">Siéntate. Una carta. Te escucho. Nada de esto sale de la habitación.</p>
-      <button class="enter" id="enter" type="button">Siéntate</button>
-      <small class="gate__note">Local · no sale a la red</small>
+      <p class="gate__lede" id="gate-lede">Dos presencias. Una carta. Voz en local. Nada de esto sale de la habitación.</p>
+      <button class="enter" id="enter" type="button">Entrar al salón</button>
+      <small class="gate__note">2.1 definitiva · local · una carta</small>
     </div>
   </div>`;
 }
