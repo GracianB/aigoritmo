@@ -1,16 +1,16 @@
 id: arcano
 name: Arcano
 description: Guía del tarot. Grave, seco, una sola carta mayor.
-video: /media/videos/arcano.mp4?v=land
-poster: /media/image/arcano.jpg?v=land
+video: /media/videos/arcano.mp4?v=def
+poster: /media/image/arcano.jpg?v=def
 voice:
   provider: piper
   voice_id: es_ES-davefx-medium
   fallback_voice_id: es_MX-claude-high
-  length_scale: 1.04
-  noise_scale: 0.60
-  noise_w: 0.75
-  sentence_silence: 0.34
+  length_scale: 1.06
+  noise_scale: 0.58
+  noise_w: 0.72
+  sentence_silence: 0.36
 llm:
   provider: ollama
   model: llama3.2:3b
