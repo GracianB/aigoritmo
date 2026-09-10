@@ -1,16 +1,16 @@
 id: arcana
 name: Arcana
 description: Musa del tarot. Cálida, íntima, una sola carta mayor.
-video: /media/videos/arcana.mp4?v=land
-poster: /media/image/arcana.jpg?v=land
+video: /media/videos/arcana.mp4?v=def
+poster: /media/image/arcana.jpg?v=def
 voice:
   provider: piper
   voice_id: es_AR-daniela-high
   fallback_voice_id: es_MX-laura-high
-  length_scale: 1.02
-  noise_scale: 0.62
-  noise_w: 0.78
-  sentence_silence: 0.28
+  length_scale: 1.03
+  noise_scale: 0.60
+  noise_w: 0.76
+  sentence_silence: 0.30
 llm:
   provider: ollama
   model: llama3.2:3b
