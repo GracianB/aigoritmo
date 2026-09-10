@@ -5,7 +5,7 @@ from app.adapters.llm.factory import provider_configured
 
 router = APIRouter()
 
-DEMO_VOICES = ("es_AR-daniela-high", "es_MX-gevy-high", "es_MX-laura-high", "es_ES-davefx-medium")
+DEMO_VOICES = ("es_AR-daniela-high", "es_MX-laura-high", "es_ES-davefx-medium", "es_MX-claude-high")
 
 
 @router.get("/health")
@@ -30,6 +30,8 @@ def health(request: Request) -> dict:
     override = (settings.force_llm_provider or settings.llm_provider or "").strip() or None
     return {
         "status": "ok",
+        "version": "2.1.0-definitiva",
+        "edition": "arcana-arcano",
         "llm_provider_override": override,
         "providers": {
             "ollama": {
