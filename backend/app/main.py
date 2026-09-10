@@ -81,6 +81,12 @@ async def lifespan(app: FastAPI):
                 kick = getattr(tts, "kick_prewarm", None)
                 if callable(kick):
                     await kick(avatar.voice.voice_id, avatar.voice)
+                    fallback = getattr(avatar.voice, "fallback_voice_id", None)
+                    if fallback and fallback != avatar.voice.voice_id:
+                        try:
+                            await kick(fallback, avatar.voice)
+                        except Exception as exc:  # noqa: BLE001
+                            logger.warning("piper fallback warmup failed (%s): %s", fallback, exc)
                 url = await app.state.orchestrator.speak_text(avatar.id, avatar.welcome)
                 logger.info("piper warmup done: %s %s -> %s", avatar.id, avatar.voice.voice_id, url)
             except Exception as exc:  # noqa: BLE001
@@ -95,7 +101,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="Aigoritmo", version="2.0.0-demo", lifespan=lifespan)
+    app = FastAPI(title="Aigoritmo Arcana", version="2.1.0-definitiva", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(LOCAL_ORIGINS),
