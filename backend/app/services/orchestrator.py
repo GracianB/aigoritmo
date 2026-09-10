@@ -74,8 +74,10 @@ class Orchestrator:
         paint_task: asyncio.Task[bytes | None] | None = None
         cards_payload: list[dict[str, str]] = []
         caption = ""
+        opener = ""
         tts = tts_provider_for(avatar.voice.provider, self._settings)
         prewarm_task: asyncio.Task[None] | None = None
+        opener_task: asyncio.Task[bytes] | None = None
         should_draw = avatar.id in {"arcana", "arcano"} and wants_spread(user_text, explicit=draw_cards)
         if should_draw:
             spread = draw_spread(user_text, avatar.id)
@@ -97,9 +99,9 @@ class Orchestrator:
             # Force the local museum card down the wire before LLM/Pollinations work.
             yield ":\n\n"
             await asyncio.sleep(0)
-            # Prefetch the card name while Ollama thinks — first speakable is usually this line.
+            # Speak the card name as soon as Piper finishes — do not wait for the LLM.
             opener = f"{caption}."
-            prewarm_task = asyncio.create_task(
+            opener_task = asyncio.create_task(
                 tts.synthesize(opener, avatar.voice.voice_id, options=avatar.voice)
             )
             paint_task = asyncio.create_task(self._paint_scene(spread))
@@ -134,15 +136,28 @@ class Orchestrator:
             if painted:
                 await queue.put(("paint", painted))
 
+        async def pump_opener() -> None:
+            if opener_task is None:
+                return
+            try:
+                wav = await opener_task
+                if wav:
+                    await queue.put(("opener", wav))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("opener synth failed: %s", exc)
+
         llm_task = asyncio.create_task(pump_llm())
         watchers = [llm_task]
         if paint_task is not None:
             watchers.append(asyncio.create_task(pump_paint()))
+        if opener_task is not None:
+            watchers.append(asyncio.create_task(pump_opener()))
 
         buffer = ""
         held = ""
         full = ""
         speech_started = False
+        opener_played = False
         llm_ended = False
         llm_ended_at = 0.0
         try:
@@ -180,6 +195,16 @@ class Orchestrator:
                         },
                     )
                     continue
+                if kind == "opener":
+                    if speech_started:
+                        continue
+                    clip_id = self._clips.save(data)
+                    spoken = prepare_for_speech(opener)
+                    yield sse("audio", {"url": f"/api/audio/{clip_id}", "text": spoken})
+                    speech_started = True
+                    opener_played = True
+                    logger.info("opener audio chars=%d text=%r", len(spoken), spoken[:80])
+                    continue
                 token = str(data)
                 if not full:
                     token = token.lstrip()
@@ -194,15 +219,28 @@ class Orchestrator:
                 min_chars = 1 if not speech_started else 40
                 speakable, held = take_speakable(held, ready, min_chars=min_chars)
                 if speakable and not speech_started:
-                    first, leftover = split_first_clip(speakable[0], max_chars=72)
+                    first, leftover = split_first_clip(speakable[0], max_chars=56)
                     if first and first != speakable[0]:
                         speakable = [first, *speakable[1:]]
                     if leftover:
                         held = f"{leftover} {held}".strip() if held else leftover
                 for sentence in speakable:
+                    if opener_played:
+                        spoken_s = prepare_for_speech(sentence)
+                        op = prepare_for_speech(opener).rstrip(".")
+                        low = spoken_s.lower()
+                        op_low = op.lower()
+                        if not spoken_s:
+                            continue
+                        if low == op_low or low == f"{op_low}.":
+                            continue
+                        if op_low and low.startswith(op_low):
+                            sentence = spoken_s[len(op):].lstrip(" .,;:¡¿")
+                            if not sentence:
+                                continue
                     is_first = not speech_started
                     if is_first:
-                        # Caption prefetch (or Hola prewarm) should already be warm/cached.
+                        # Voice kick only — never block on card-name synth here.
                         if prewarm_task is not None and not prewarm_task.done():
                             with suppress(Exception):
                                 await prewarm_task
