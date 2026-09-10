@@ -249,13 +249,24 @@ function bindStudio(root: HTMLElement): void {
     if (!button || state.busy) return;
     const next = state.roster.find((item) => item.id === button.dataset.avatar);
     if (!next || next.id === state.avatar?.id) return;
-    state.avatar = next;
-    state.conversationId = null;
-    lastFailed = null;
-    welcomePending = true;
-    clearImage(root);
-    stopAudio();
-    renderStudio(root);
+    const salon = root.querySelector(".arcana") as HTMLElement | null;
+    const swap = () => {
+      state.avatar = next;
+      state.conversationId = null;
+      lastFailed = null;
+      welcomePending = true;
+      clearImage(root);
+      stopAudio();
+      renderStudio(root);
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", next.id === "arcano" ? "#05070b" : "#07060a");
+    };
+    if (!salon || prefersReducedMotion()) {
+      swap();
+      return;
+    }
+    salon.classList.add("is-theme-swap");
+    window.setTimeout(swap, 220);
   });
   root.querySelector("#mute")?.addEventListener("click", (event) => {
     state.muted = !state.muted;
