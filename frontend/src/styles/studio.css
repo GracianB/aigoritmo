@@ -2177,3 +2177,49 @@
   background: color-mix(in srgb, var(--gold) 12%, transparent);
   color: var(--gold-lit);
 }
+
+/* --- Definitive edition: gate + dual salon seal --- */
+
+.gate__kicker {
+  letter-spacing: .28em;
+}
+.gate__also {
+  font-family: var(--inscription);
+  letter-spacing: .28em;
+  opacity: .78;
+}
+.gate .enter {
+  min-width: 12rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-family: var(--inscription);
+  font-size: .72rem;
+}
+.gate__note {
+  opacity: .8;
+  letter-spacing: .14em;
+}
+
+.arcana[data-avatar="arcana"] .brand__house {
+  color: #c4a882;
+}
+.arcana[data-avatar="arcano"] .brand__house {
+  color: #8aa0b4;
+  letter-spacing: .2em;
+}
+
+.arcana[data-avatar="arcana"] .console__kicker {
+  color: var(--gold-2);
+}
+.arcana[data-avatar="arcano"] .console__kicker {
+  color: #7f96ac;
+  font-family: var(--inscription);
+  letter-spacing: .18em;
+}
+
+.arcana .disclaimer {
+  font-family: var(--inscription);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-size: .58rem;
+}
