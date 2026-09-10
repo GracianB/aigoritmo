@@ -18,7 +18,7 @@ const SPEECH_GAP_MS = 90;
 const WIZARD_CLIP = "/media/videos/wizard.mp4?v=land";
 const HEALTH_MS = 45000;
 const THINK_MS = 2600;
-const WELCOME_DELAY_MS = 420;
+const WELCOME_DELAY_MS = 160;
 const THINK_FADE_MS = 220;
 
 type PresenceState = "idle" | "thinking" | "writing" | "speaking";
