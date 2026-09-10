@@ -2018,3 +2018,162 @@
   background: color-mix(in srgb, var(--steel) 14%, transparent);
   color: #e8f2fa;
 }
+
+/* --- Arcana salon pass: gold/velvet depth + theme swap --- */
+
+.arcana {
+  transition: background var(--dur-slow) var(--ease), color var(--dur) ease, filter .28s ease;
+}
+.arcana.is-theme-swap {
+  filter: blur(4px) brightness(.82);
+  opacity: .92;
+  pointer-events: none;
+}
+
+.arcana[data-avatar="arcana"] {
+  background:
+    radial-gradient(ellipse at 48% 6%, rgba(122, 36, 51, .26), transparent 42%),
+    radial-gradient(ellipse at 72% 90%, rgba(110, 84, 44, .16), transparent 44%),
+    var(--bg);
+}
+
+.arcana[data-avatar="arcana"]::before {
+  background:
+    radial-gradient(ellipse at 28% 18%, rgba(214, 181, 122, .08), transparent 48%),
+    radial-gradient(ellipse at 78% 78%, rgba(122, 36, 51, .14), transparent 52%);
+}
+
+.arcana[data-avatar="arcana"] .brand strong,
+.arcana[data-avatar="arcana"] .console__head strong {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--gold-lit);
+  text-shadow: 0 0 24px rgba(214, 181, 122, .18);
+}
+
+.arcana[data-avatar="arcana"] .brand__house,
+.arcana[data-avatar="arcana"] .status__phrase,
+.arcana[data-avatar="arcana"] .presence__caption,
+.arcana[data-avatar="arcana"] .disclaimer {
+  letter-spacing: .2em;
+  color: #a89882;
+}
+
+.arcana[data-avatar="arcana"] .console {
+  border-color: color-mix(in srgb, var(--gold) 26%, transparent);
+  background:
+    linear-gradient(165deg, rgba(42, 22, 28, .42), transparent 40%),
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 94%, transparent), rgba(8, 6, 10, .98));
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, .6),
+    inset 0 1px 0 rgba(239, 212, 163, .12),
+    0 0 52px rgba(122, 36, 51, .12);
+  backdrop-filter: blur(10px) saturate(1.05);
+}
+
+.arcana[data-avatar="arcana"] .bubble--bot {
+  border-color: color-mix(in srgb, var(--gold) 16%, transparent);
+  background: rgba(16, 12, 16, .52);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--gold) 42%, transparent);
+}
+
+.arcana[data-avatar="arcana"] .bubble--user {
+  background: rgba(42, 28, 32, .5);
+  border-color: color-mix(in srgb, var(--garnet-lit) 22%, transparent);
+}
+
+.arcana[data-avatar="arcana"] .composer,
+.arcana[data-avatar="arcana"] .composer textarea {
+  border-color: color-mix(in srgb, var(--gold) 22%, transparent);
+  background: rgba(10, 8, 12, .72);
+}
+
+.arcana[data-avatar="arcana"] .composer:focus-within {
+  border-color: color-mix(in srgb, var(--gold) 48%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 18%, transparent);
+}
+
+.arcana[data-avatar="arcana"] .send {
+  background: linear-gradient(180deg, var(--gold-lit), var(--gold-2));
+  color: #1a120c;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(255, 236, 200, .35);
+}
+
+.arcana[data-avatar="arcana"] .ritual-btn--hero {
+  background: linear-gradient(180deg, rgba(214, 181, 122, .2), rgba(122, 36, 51, .12));
+  border-color: color-mix(in srgb, var(--gold) 44%, transparent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 236, 200, .18);
+}
+
+.arcana[data-avatar="arcana"] .ritual-btn--hero b {
+  color: var(--gold-lit);
+  font-family: var(--display);
+}
+
+/* Orb: warm garnet-gold jewel */
+.arcana[data-avatar="arcana"] .presence.is-orb {
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(122, 36, 51, .4), transparent 52%),
+    radial-gradient(ellipse at 50% 100%, rgba(110, 84, 44, .28), transparent 48%),
+    var(--bg);
+}
+
+.arcana[data-avatar="arcana"] .orb {
+  filter:
+    drop-shadow(0 8px 22px rgba(214, 181, 122, .3))
+    drop-shadow(0 26px 28px rgba(0, 0, 0, .5));
+}
+
+.arcana[data-avatar="arcana"] .orb__glass {
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 244, 220, .32), transparent 34%),
+    radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--orb) 22%, transparent), rgba(10, 6, 10, .8) 74%);
+  border: 1px solid color-mix(in srgb, var(--orb) 58%, #2a1810);
+  box-shadow:
+    inset 0 0 18px color-mix(in srgb, var(--orb) 34%, transparent),
+    inset 0 1px 0 rgba(255, 236, 200, .4),
+    0 0 24px color-mix(in srgb, var(--orb) 28%, transparent);
+}
+
+.arcana[data-avatar="arcana"] .orb__core {
+  background:
+    radial-gradient(circle at 38% 34%, #fff8ea, color-mix(in srgb, var(--orb) 70%, white) 16%, var(--orb) 48%, #18080c 84%);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--orb) 72%, transparent);
+}
+
+.arcana[data-avatar="arcana"] .orb__rim {
+  border-color: color-mix(in srgb, #efd4a3 55%, transparent);
+  box-shadow:
+    inset 0 0 0 1px rgba(40, 20, 12, .45),
+    0 0 8px rgba(214, 181, 122, .28);
+}
+
+.arcana[data-avatar="arcana"] .orb__plasma {
+  filter: blur(9px) saturate(1.15);
+  opacity: .48;
+}
+
+.arcana[data-avatar="arcana"] .spread__stage {
+  background:
+    linear-gradient(145deg, #ead3a2 0%, #c4a066 36%, #7a4e2c 70%, #d0a86a 100%);
+  box-shadow:
+    0 22px 40px rgba(0, 0, 0, .55),
+    0 2px 0 rgba(255, 236, 200, .18),
+    inset 0 0 0 1px rgba(40, 24, 12, .45);
+}
+
+.arcana[data-avatar="arcana"] .avatar-switch {
+  border-color: color-mix(in srgb, var(--gold) 24%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 200, .08);
+}
+
+.arcana[data-avatar="arcana"] .icon-btn {
+  border-color: color-mix(in srgb, var(--gold) 24%, transparent);
+  color: #e6d8c0;
+}
+
+.arcana[data-avatar="arcana"] .icon-btn:hover {
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  color: var(--gold-lit);
+}
