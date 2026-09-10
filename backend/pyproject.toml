@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aigoritmo"
-version = "0.1.0"
-description = "Aigoritmo v2 — cinematic local avatar studio"
+version = "2.1.0"
+description = "Aigoritmo 2.1 — versión definitiva Arcana + Arcano"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115.0",
