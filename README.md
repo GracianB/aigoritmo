@@ -1,5 +1,787 @@
 <div align="center">
 
+<a href="http://127.0.0.1:8000">
+<img
+src="https://capsule-render.vercel.app/api?type=waving&height=260&color=0:030303,35:0D0A07,70:21170D,100:050505&text=AIGORITMO&fontColor=E1BD78&fontSize=64&fontAlignY=38&desc=ARCANA%20%C2%B7%20ARCANO&descColor=F4EEE4&descAlignY=62&descSize=23&animation=twinkling"
+width="100%"
+alt="Aigoritmo · Arcana · Arcano"
+/>
+</a>
+
+<br>
+
+<img
+src="https://readme-typing-svg.demolab.com?font=Fraunces&weight=500&size=27&duration=3200&pause=850&color=C9A86A&center=true&vCenter=true&width=1000&height=65&lines=One+card.+One+presence.+One+answer.;ARCANA+%C2%B7+GOLD+%2F+VELVET;ARCANO+%C2%B7+STEEL+%2F+NIGHT;Local+Piper+%C2%B7+Swappable+Brain;A+cinematic+Spanish-first+local+studio."
+alt="Aigoritmo typing"
+/>
+
+<br>
+
+<a href="#experience">
+<img src="https://img.shields.io/badge/EXPERIENCE-ARCANA%20%C2%B7%20ARCANO-C9A86A?style=for-the-badge&labelColor=090909" alt="Experience"/>
+</a>
+<a href="#architecture">
+<img src="https://img.shields.io/badge/ARCHITECTURE-LOCAL--FIRST-8E7A5A?style=for-the-badge&labelColor=090909" alt="Architecture"/>
+</a>
+<a href="#quick-start">
+<img src="https://img.shields.io/badge/RUN-LOCAL-7EE7FF?style=for-the-badge&labelColor=090909" alt="Run locally"/>
+</a>
+
+<br><br>
+
+**ONE CARD · TWO PRESENCES · LOCAL VOICE · SWAPPABLE BRAIN**
+
+<br>
+
+<sub>
+Aigoritmo is a cinematic local studio built around a deliberately constrained interaction:
+<br>
+<strong>one consultation → one card → one answer.</strong>
+</sub>
+
+</div>
+
+---
+
+## ◈ EXPERIENCE
+
+> **Aigoritmo is not a generic chatbot.**
+>
+> It is a controlled conversational experience where visual presence, voice, card logic and language work as a single system.
+
+The interface is built around two finished identities:
+
+| Presence      | Visual language          | Character                     |
+| ------------- | ------------------------ | ----------------------------- |
+| 🜂 **ARCANA** | Gold · Velvet · Warmth   | Intuitive, luminous, intimate |
+| ⚔ **ARCANO**  | Steel · Night · Contrast | Grave, restrained, nocturnal  |
+
+No avatar catalogue.
+No endless character selector.
+No three-card spread.
+
+Just **two presences** with a defined visual and conversational identity.
+
+---
+
+## ✦ THE CORE RULE
+
+### ONE CONSULTATION = ONE CARD
+
+Aigoritmo deliberately avoids the traditional:
+
+`PAST → PRESENT → FUTURE`
+
+and instead follows:
+
+```text
+CONSULTATION
+     │
+     ▼
+  ONE CARD
+     │
+     ▼
+ ONE READING
+     │
+     ▼
+ ONE ANSWER
+```
+
+The restriction is intentional.
+
+The system is designed to make each interaction feel like an event rather than a data dump.
+
+### The rules
+
+| Rule            | Behaviour                                              |
+| --------------- | ------------------------------------------------------ |
+| 👋 Greeting     | Does **not** trigger a draw                            |
+| 🃏 Consultation | Produces exactly **one card**                          |
+| 🔮 Reading      | Built around the selected card                         |
+| 🎙 Voice        | Generated locally through Piper                        |
+| 🧠 Brain        | Ollama, Grok or ChatGPT                                |
+| 🎨 Image        | Local card first, Pollinations as optional replacement |
+| 👤 Identity     | User sees the presence, not the underlying model       |
+
+---
+
+## ◇ THE TWO PRESENCES
+
+### 🜂 ARCANA
+
+```text
+GOLD
+VELVET
+WARMTH
+INTUITION
+```
+
+Arcana is the warmer presence.
+
+Its visual language is built around:
+
+* gold
+* velvet
+* warm shadows
+* cinematic lighting
+* intimate atmosphere
+* softer transitions
+
+It should feel like entering a private reading room.
+
+---
+
+### ⚔ ARCANO
+
+```text
+STEEL
+NIGHT
+CONTRAST
+GRAVITY
+```
+
+Arcano moves in the opposite direction.
+
+Its language is:
+
+* steel
+* darkness
+* cold contrast
+* restrained movement
+* deeper atmosphere
+* stronger visual tension
+
+Same system.
+
+Different presence.
+
+---
+
+## ◉ THE ORB
+
+The interface uses a central **presence orb** as a visual state indicator.
+
+It is not decoration.
+
+The orb communicates that the system is:
+
+```text
+IDLE
+  ↓
+LISTENING
+  ↓
+THINKING
+  ↓
+READING
+  ↓
+SPEAKING
+```
+
+The goal is to make system state perceptible without turning the interface into a conventional dashboard.
+
+---
+
+## ⇄ PRESENCE TRANSITIONS
+
+Changing between Arcana and Arcano is treated as a transition between identities rather than a simple UI toggle.
+
+```text
+ARCANA
+  │
+  │  FADE
+  ▼
+TRANSITION
+  │
+  │  PRESENCE CHANGE
+  ▼
+ARCANO
+```
+
+The avatar changes with a visual fade so the interface preserves continuity.
+
+---
+
+# 🃏 CARD SYSTEM
+
+The card layer is deliberately resilient.
+
+### Primary path
+
+```text
+USER
+ │
+ ▼
+LOCAL CARD
+ │
+ ▼
+IMMEDIATE EXPERIENCE
+```
+
+The card is available locally without waiting for external image generation.
+
+### Optional visual replacement
+
+```text
+LOCAL CARD
+    │
+    ├──────────────► USE IMMEDIATELY
+    │
+    ▼
+POLLINATIONS
+    │
+    ▼
+OPTIONAL GENERATED IMAGE
+```
+
+Pollinations can replace the local visual in approximately **8 seconds**.
+
+The important architectural principle is:
+
+> **External image generation is optional. The experience is not.**
+
+---
+
+# 🧠 SWAPPABLE BRAIN
+
+Aigoritmo separates the conversational brain from the experience layer.
+
+```text
+                    ┌─────────────┐
+                    │   AIGORITMO │
+                    │  EXPERIENCE │
+                    └──────┬──────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+              ▼            ▼            ▼
+          OLLAMA         GROK        CHATGPT
+          LOCAL           API          API
+              │            │            │
+              └────────────┼────────────┘
+                           ▼
+                    SAME EXPERIENCE
+```
+
+The model can change.
+
+The identity does not.
+
+The card system does not.
+
+The voice system does not.
+
+The interface does not.
+
+---
+
+## 🔌 PROVIDER MATRIX
+
+| Provider             | Brain | Voice       | Card  |
+| -------------------- | ----- | ----------- | ----- |
+| **Ollama**           | Local | Piper local | Local |
+| **Grok / xAI**       | API   | Piper local | Local |
+| **ChatGPT / OpenAI** | API   | Piper local | Local |
+
+This separation makes experimentation possible without rebuilding the product around every model provider.
+
+---
+
+# 🎙 LOCAL VOICE
+
+Voice is handled through **Piper**.
+
+```text
+LLM RESPONSE
+     │
+     ▼
+    TEXT
+     │
+     ▼
+   PIPER
+     │
+     ▼
+   VOICE
+```
+
+The voice layer remains independent from the LLM.
+
+That means changing the brain does not require changing the voice.
+
+---
+
+# 🏗 ARCHITECTURE
+
+```text
+┌───────────────────────────────────────────────┐
+│                   AIGORITMO                   │
+├───────────────────────────────────────────────┤
+│                                               │
+│  EXPERIENCE                                   │
+│  ├── Arcana                                   │
+│  ├── Arcano                                   │
+│  ├── Presence Orb                             │
+│  └── Avatar Transitions                       │
+│                                               │
+│  CONSULTATION                                 │
+│  ├── User Input                               │
+│  ├── One-Card Rule                            │
+│  └── Reading Generation                       │
+│                                               │
+│  BRAIN                                        │
+│  ├── Ollama                                   │
+│  ├── Grok                                     │
+│  └── OpenAI                                   │
+│                                               │
+│  VOICE                                        │
+│  └── Piper                                     │
+│                                               │
+│  VISUALS                                      │
+│  ├── Local Cards                              │
+│  └── Pollinations                             │
+│                                               │
+└───────────────────────────────────────────────┘
+```
+
+---
+
+# ⚡ DATA FLOW
+
+```text
+USER
+ │
+ ▼
+CONSULTATION
+ │
+ ▼
+AIGORITMO
+ │
+ ├──────────────► CARD
+ │
+ ├──────────────► LLM
+ │                  │
+ │                  ▼
+ │               READING
+ │
+ └──────────────► PIPER
+                    │
+                    ▼
+                  VOICE
+```
+
+Everything converges into one experience.
+
+---
+
+# 🚀 QUICK START
+
+### 1. Start the local studio
+
+```powershell
+powershell -File X:\GitHub\systems-lab\aigoritmo\PROBAR-ARCANA.ps1
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
+
+Health endpoint:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+Current version:
+
+```text
+2.1.0-definitiva
+```
+
+### Shortcut
+
+```text
+X:\PROBAR-ARCANA.bat
+```
+
+Detailed instructions:
+
+```text
+COMO-EJECUTAR.md
+```
+
+---
+
+# 🔐 CONFIGURATION
+
+Create your environment file from:
+
+```text
+.env.example
+```
+
+Then configure the provider you want to use.
+
+> Never paste API keys into source code, README files or chat messages. Humanity has somehow survived this long while repeatedly putting passwords in screenshots, so let's not contribute another example.
+
+---
+
+## 🦙 OLLAMA
+
+For a local-first setup:
+
+```env
+LLM_PROVIDER=ollama
+```
+
+No API key is required for the LLM provider.
+
+Architecture:
+
+```text
+USER
+ │
+ ▼
+AIGORITMO
+ │
+ ▼
+OLLAMA
+ │
+ ▼
+LOCAL RESPONSE
+ │
+ ▼
+PIPER
+```
+
+---
+
+## 🚀 GROK / xAI
+
+Configure:
+
+```env
+LLM_PROVIDER=spacexai
+XAI_API_KEY=...
+```
+
+The configuration already prefers the `spacexai` provider.
+
+Architecture:
+
+```text
+USER
+ │
+ ▼
+AIGORITMO
+ │
+ ▼
+GROK / xAI
+ │
+ ▼
+RESPONSE
+ │
+ ▼
+PIPER LOCAL
+```
+
+---
+
+## 🤖 CHATGPT / OPENAI
+
+Configure:
+
+```env
+LLM_PROVIDER=openai
+OPENAI_API_KEY=...
+```
+
+Architecture:
+
+```text
+USER
+ │
+ ▼
+AIGORITMO
+ │
+ ▼
+OPENAI
+ │
+ ▼
+RESPONSE
+ │
+ ▼
+PIPER LOCAL
+```
+
+---
+
+# 🛡 LOCAL-FIRST DESIGN
+
+Aigoritmo can operate with a strongly local architecture:
+
+```text
+┌─────────────────────┐
+│      AIGORITMO      │
+├─────────────────────┤
+│                     │
+│  Card        LOCAL  │
+│  Voice       LOCAL  │
+│  Interface   LOCAL  │
+│  Brain       OLLAMA │
+│                     │
+└─────────────────────┘
+```
+
+When using Grok or OpenAI, only the brain layer moves to an external API.
+
+The experience architecture remains the same.
+
+---
+
+# 🧩 SYSTEM PRINCIPLES
+
+### 01 · CONSTRAINT
+
+Less can create more presence.
+
+### 02 · SEPARATION
+
+The interface should not depend on a specific model.
+
+### 03 · LOCALITY
+
+Cards and voice should remain available locally.
+
+### 04 · RESILIENCE
+
+Optional external services should never define the entire experience.
+
+### 05 · IDENTITY
+
+Arcana and Arcano are finished presences, not skins.
+
+### 06 · SIMPLICITY
+
+One consultation should produce one meaningful interaction.
+
+---
+
+# 🧪 EXPERIENCE MATRIX
+
+| Layer            | Local | Replaceable | External |
+| ---------------- | :---: | :---------: | :------: |
+| Interface        |   ✓   |             |          |
+| Presence         |   ✓   |      ✓      |          |
+| Card             |   ✓   |      ✓      | Optional |
+| Voice            |   ✓   |      ✓      |          |
+| Brain            |   ✓   |      ✓      | Optional |
+| Image generation |       |      ✓      |     ✓    |
+
+---
+
+# 📡 SYSTEM STATUS
+
+```text
+AIGORITMO
+────────────────────────────────────
+
+VERSION       2.1.0-definitiva
+MODE          LOCAL STUDIO
+LANGUAGE      ESPAÑOL
+PRESENCES     ARCANA · ARCANO
+CARD MODE     ONE CARD
+VOICE         PIPER
+BRAIN         OLLAMA / GROK / OPENAI
+IMAGE         LOCAL / POLLINATIONS
+```
+
+---
+
+# 🜁 WHY "ARCANA · ARCANO"?
+
+The names describe two different ways of inhabiting the same system.
+
+**Arcana** is warmth.
+
+**Arcano** is gravity.
+
+They are not separate products.
+
+They are two interpretations of the same machine.
+
+```text
+                 AIGORITMO
+                     │
+            ┌────────┴────────┐
+            ▼                 ▼
+         ARCANA             ARCANO
+       GOLD / VELVET       STEEL / NIGHT
+            │                 │
+            └────────┬────────┘
+                     ▼
+                ONE SYSTEM
+```
+
+---
+
+# 🧭 PROJECT PHILOSOPHY
+
+Aigoritmo is intentionally theatrical.
+
+Not because the system needs theatre to function.
+
+Because interaction is not only computation.
+
+It is also:
+
+```text
+TIMING
+PRESENCE
+VOICE
+VISUAL LANGUAGE
+CONTEXT
+RESTRAINT
+```
+
+The objective is to make a local AI system feel like an environment rather than another rectangular chat window.
+
+---
+
+# 🧱 DESIGN DNA
+
+```text
+CINEMATIC
+     +
+LOCAL-FIRST
+     +
+AI-AGNOSTIC
+     +
+VOICE
+     +
+VISUAL PRESENCE
+     +
+CONTROLLED INTERACTION
+```
+
+The result is deliberately closer to a **digital studio** than a conventional chatbot.
+
+---
+
+# 🔗 SYSTEMS LAB
+
+Aigoritmo belongs to the experimental side of the broader ecosystem:
+
+```text
+                    PERSONAL / PROFESSIONAL
+                             │
+                             ▼
+                         GRACIANB
+                             │
+            ┌────────────────┼────────────────┐
+            │                │                │
+            ▼                ▼                ▼
+      PROFESSIONAL       SYSTEMS LAB         YOGA
+       EXPERIENCE            PLAY           PRESENCE
+            │                │                │
+            │        ┌───────┼────────┐       │
+            │        ▼       ▼        ▼       │
+            │     ARCANA   OHANA   VÓRTICE    │
+            │                                  │
+            └──────────────┬───────────────────┘
+                           ▼
+                     EXPERIMENTATION
+```
+
+---
+
+## 🌐 ECOSYSTEM
+
+<div align="center">
+
+<a href="https://gracianb.github.io/GracianB/">
+<img src="https://img.shields.io/badge/HUB-GracianB-C4A574?style=for-the-badge&labelColor=090909" alt="GracianB Hub"/>
+</a>
+
+<a href="https://gracianb.github.io/systems-lab/">
+<img src="https://img.shields.io/badge/SYSTEMS%20LAB-PLAY-7EE7FF?style=for-the-badge&labelColor=090909" alt="Systems Lab"/>
+</a>
+
+<a href="https://gracianb.github.io/project-ohana/">
+<img src="https://img.shields.io/badge/PROJECT-OHANA-FFB86B?style=for-the-badge&labelColor=090909" alt="Project Ohana"/>
+</a>
+
+<a href="https://vortex-gilt-xi.vercel.app/">
+<img src="https://img.shields.io/badge/VÓRTICE-WEBGL-9B8CFF?style=for-the-badge&labelColor=090909" alt="Vórtice"/>
+</a>
+
+<a href="https://gracianb.github.io/yoga-instructor/">
+<img src="https://img.shields.io/badge/YOGA-PRESENCE-7DCaa5?style=for-the-badge&labelColor=090909" alt="Yoga"/>
+</a>
+
+</div>
+
+---
+
+# ◇ THE FINAL CARD
+
+<div align="center">
+
+### ONE CARD.
+
+### TWO PRESENCES.
+
+### ONE LOCAL STUDIO.
+
+<br>
+
+**ARCANA · ARCANO**
+
+`A cinematic AI experiment built around presence, voice and constraint.`
+
+<br>
+
+<a href="https://github.com/GracianB">
+<img src="https://img.shields.io/badge/GITHUB-GRACIANB-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+</a>
+
+<a href="https://www.linkedin.com/in/gracianbaena">
+<img src="https://img.shields.io/badge/LINKEDIN-GRACIAN%20BAENA-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+</a>
+
+</div>
+
+---
+
+<div align="center">
+
+<img
+src="https://capsule-render.vercel.app/api?type=waving&height=170&section=footer&color=0:050505,40:160F09,75:0D0A07,100:030303&fontColor=E1BD78&animation=twinkling"
+width="100%"
+alt="Aigoritmo footer"
+/>
+
+<br>
+
+<sub>
+
+**AIGORITMO · ARCANA · ARCANO**
+
+<br>
+
+`Built locally. Designed as a presence.`
+
+<br><br>
+
+© 2026 Gracián Baena
+
+</sub>
+
+</div>
+
+
+<div align="center">
+
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
 <!--                               HERO                                      -->
